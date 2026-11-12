@@ -1,0 +1,2444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mingqian Dong Portfolio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0a0d0c">
+<meta name="description" content="Mingqian Dong, level designer. Walk the floor plan to see white box levels, game projects and experience.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the home page is a top-down graybox floor plan and nothing else. Each room opens its own page, drawn as the inside of that room. */
+:root {
+  /* One dark look everywhere, matched to the particle building on the home page. */
+  --bg: #0a0d0c;
+  --surface: #121715;
+  --ink: #e3ebe6;
+  --muted: #8b9890;
+  --line: #25302b;
+  --wall: rgba(220, 239, 227, 0.3);  /* drawn walls and frames */
+  --grid: transparent;
+  --accent: #5ccf86;      /* navmesh green */
+  --accent-soft: rgba(92, 207, 134, 0.12);
+  --hatch: rgba(220, 239, 227, 0.07);
+  --font-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+  --step-3: clamp(2.25rem, 5vw, 3.25rem);
+  --step-4: clamp(3rem, 8vw, 5.5rem);
+  --wrap: 72rem;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(92, 207, 134, 0.06), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(92, 207, 134, 0.04), transparent 70%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font: 400 var(--step-0)/1.6 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: var(--wrap); margin: 0 auto; }
+.mono { font-family: var(--font-mono); }
+
+/* ---------- Home: the floor plan ---------- */
+#home { height: 100%; display: flex; flex-direction: column; padding-block: 1rem; gap: 0.75rem; }
+#home[hidden] { display: none !important; }
+.plan { flex: 1; min-height: 0; position: relative; }
+.plan svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.plan svg[hidden] { display: none; }
+/* Particle building: one fixed dark look in both themes, framed like a drawing sheet. */
+.plan { background: #090c0b; border: 1px solid var(--line); overflow: hidden; max-width: var(--wrap); width: 100%; margin: 0 auto; }
+#pb { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: default; touch-action: manipulation; }
+#pb.is-hot { cursor: pointer; }
+.pb-cap {
+  position: absolute; margin: 0; pointer-events: none; color: #a9b8af;
+  font-family: var(--font-mono); font-size: var(--step--1); line-height: 1.5; letter-spacing: 0.04em;
+  transition: opacity 0.35s, filter 0.35s; max-width: 34ch;
+}
+.pb-cap.swap { opacity: 0; filter: blur(6px); }
+.pb-cap .k { color: #5ccf86; }
+.pb-cap b { display: inline-block; margin-top: 0.35rem; color: #e8f3ec; font-weight: 500; }
+.pb-lift { position: absolute; display: flex; flex-direction: column; gap: 2px; font-family: var(--font-mono); }
+.pb-lift button {
+  all: unset; box-sizing: border-box; cursor: pointer; display: flex; gap: 0.7rem; align-items: baseline;
+  padding: 0.22rem 0.6rem; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #7f8e86; border-left: 2px solid #26302b; transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.pb-lift button span { color: #4d5a53; min-width: 1.6em; }
+.pb-lift button:hover, .pb-lift button.on, .pb-lift button:focus-visible { color: #e8f3ec; border-color: #5ccf86; background: rgba(92, 207, 134, 0.08); }
+.pb-lift button.on span { color: #5ccf86; }
+.pb-lift button:focus-visible { outline: 2px solid #5ccf86; outline-offset: 2px; }
+@media (max-aspect-ratio: 17/20) {
+  .pb-lift { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .pb-lift { flex-wrap: nowrap; gap: 0; }
+  .pb-lift button { border-left: 0; border-bottom: 2px solid #26302b; padding: 0.35rem 0.3rem; font-size: 0.6rem; letter-spacing: 0.04em; white-space: nowrap; }
+  .pb-lift button span { display: none; }
+}
+@media (max-aspect-ratio: 17/20) {
+  #home { height: auto; }
+  .plan { flex: none; height: calc(100dvh - 2rem); min-height: 34rem; max-width: 100%; }
+}
+.titleblock[hidden] { display: none !important; }
+.titleblock {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: stretch;
+  border: 1px solid var(--wall); background: var(--surface); max-width: var(--wrap); width: 100%; margin: 0 auto;
+}
+.titleblock > div { padding: 0.6rem 0.9rem; border-right: 1px solid var(--line); min-width: 0; }
+.titleblock > div:last-child { border-right: 0; }
+.tb-label { display: block; font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.tb-name { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 0.95; text-transform: uppercase; margin: 0.1rem 0 0; }
+.tb-role { font-family: var(--font-mono); font-size: var(--step--1); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.tb-hint { font-family: var(--font-mono); font-size: var(--step--1); margin: 0.15rem 0 0; min-height: 2.6em; }
+.tb-hint b { font-weight: 500; color: var(--accent); }
+
+.room { cursor: pointer; }
+.room .floor { fill: var(--bg); stroke: var(--ink); stroke-width: 3; transition: fill 0.2s, stroke 0.2s; }
+.room:hover .floor, .room:focus-visible .floor, .room.is-active .floor { fill: var(--accent-soft); stroke: var(--accent); }
+.room:focus { outline: none; }
+.room text { font-family: var(--font-mono); fill: var(--ink); pointer-events: none; }
+.room .r-code { font-size: 11px; fill: var(--muted); letter-spacing: 0.08em; }
+.room .r-name { font-family: var(--font-display); font-weight: 800; font-size: 26px; text-transform: uppercase; letter-spacing: 0.02em; }
+.room .r-meta { font-size: 11px; fill: var(--muted); }
+.room .r-enter { font-size: 11px; fill: var(--accent); opacity: 0; transition: opacity 0.2s; letter-spacing: 0.08em; }
+.room:hover .r-enter, .room:focus-visible .r-enter { opacity: 1; }
+.prop { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; pointer-events: none; }
+.prop.wip { fill: url(#hatch); stroke-dasharray: 4 3; }
+.prop.solid { fill: var(--ink); stroke: none; opacity: 0.85; }
+.prop.goal { fill: var(--accent); stroke: none; }
+.hall { fill: var(--bg); stroke: var(--ink); stroke-width: 3; }
+.hall-label { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); letter-spacing: 0.2em; }
+.door { stroke: var(--bg); stroke-width: 5; }
+.door-swing { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
+.path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4 6; }
+.player-cone { fill: var(--accent-soft); }
+.player-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.label-small { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); }
+.scalebar { stroke: var(--ink); stroke-width: 2; }
+.north { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+
+/* ---------- Room pages ---------- */
+.roomview { padding-block: 1rem 3rem; }
+.roomview[hidden] { display: none !important; }
+.roombar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; flex-wrap: wrap; padding-block: 1.25rem 2rem; }
+.back { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; padding: 0.45rem 0.75rem; border: 1px solid var(--wall); }
+.back:hover { color: var(--accent); border-color: var(--accent); }
+.minimap { display: none !important; }  /* removed 2026-11-07: home is now the particle building */
+.minimap svg { width: 120px; height: auto; display: block; }
+.minimap .mm-room { fill: var(--surface); stroke: var(--ink); stroke-width: 3; cursor: pointer; }
+.minimap .mm-room:hover { fill: var(--accent-soft); }
+.minimap .mm-room.is-here { fill: var(--accent); stroke: var(--accent); }
+.minimap .mm-hall { fill: var(--surface); stroke: var(--ink); stroke-width: 3; }
+.minimap-label { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; text-align: right; }
+.minimap-label b { display: block; color: var(--ink); font-weight: 500; }
+
+/* The page itself is the room: thick walls, a door gap where you came in. */
+.walls { position: relative; border: 2px solid var(--wall); background: color-mix(in srgb, var(--bg) 70%, var(--surface)); padding: clamp(1.25rem, 4vw, 3rem); }
+.walls::before {
+  content: ""; position: absolute; top: -2px; left: clamp(1.25rem, 4vw, 3rem); width: 5.5rem; height: 2px; background: var(--bg);
+}
+.walls::after {
+  content: "DOOR"; position: absolute; top: -1.4rem; left: clamp(1.25rem, 4vw, 3rem); width: 5.5rem; text-align: center;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.2em; color: var(--muted);
+}
+.room-head { display: grid; gap: 0.5rem; margin-bottom: 2.5rem; max-width: 46rem; }
+.eyebrow { font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: var(--step-4); line-height: 0.9; text-transform: uppercase; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+.intro { color: var(--muted); margin: 0.5rem 0 0; max-width: 40rem; }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: var(--step-3); line-height: 1; text-transform: uppercase; margin: 0; letter-spacing: 0.01em; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); line-height: 1.05; text-transform: uppercase; margin: 0; letter-spacing: 0.02em; text-wrap: balance; }
+.subhead { font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 2.75rem 0 1rem; display: flex; align-items: center; gap: 0.75rem; }
+.subhead::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.subhead.first { margin-top: 0; }
+.next-door { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.06em; }
+.next-door a { text-decoration: none; color: var(--muted); }
+.next-door a:hover { color: var(--accent); }
+.next-door a b { color: var(--ink); font-weight: 500; }
+
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; font-family: var(--font-mono); font-size: var(--step--1); margin: 0; }
+.facts dt { color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.facts dd { margin: 0; }
+.tag { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.1rem 0.45rem; border: 1px solid var(--line); color: var(--muted); }
+.tag.ld { border-color: var(--accent); color: var(--accent); }
+.tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.two-col { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 2.5rem; }
+
+/* White box slots */
+.wb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.wb { border: 1px dashed var(--muted); background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
+.wb-shot {
+  aspect-ratio: 16 / 9; max-width: 100%;
+  background: repeating-linear-gradient(45deg, var(--hatch) 0 10px, transparent 10px 20px);
+  display: grid; place-items: center; border-bottom: 1px dashed var(--muted);
+  font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.wb-body { padding: 1rem; display: grid; gap: 0.5rem; }
+.wb-id { font-family: var(--font-mono); font-size: var(--step--1); color: var(--accent); }
+.wb-fields { margin: 0.25rem 0 0; display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.75rem; font-size: var(--step--1); }
+.wb-fields dt { font-family: var(--font-mono); text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+.wb-fields dd { margin: 0; color: var(--muted); }
+.wb-shot.has-img { background: var(--surface); padding: 0; overflow: hidden; display: block; }
+.wb-shot.has-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.wb-shot a { display: block; width: 100%; height: 100%; }
+.wb-open { justify-self: start; margin-top: 0.25rem; }
+
+/* Interactive white box level map */
+.lm { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; border: 1px solid var(--wall); background: var(--surface); margin-bottom: 2.5rem; }
+.lm-stage { position: relative; min-width: 0; border-right: 1px solid var(--line); overflow: hidden; touch-action: none; }
+.lm-stage svg { display: block; width: 100%; height: auto; cursor: grab; user-select: none; }
+.lm-stage svg.dragging { cursor: grabbing; }
+.lm-stage image { image-rendering: auto; }
+.lm-stage image { filter: invert(0.9) hue-rotate(180deg); }
+.lm-tools { position: absolute; top: 0.6rem; left: 0.6rem; right: 0.6rem; display: flex; justify-content: space-between; gap: 0.5rem; pointer-events: none; }
+.lm-tools > div { display: flex; pointer-events: auto; }
+.lm-tools button { font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.05em; min-width: 2.1rem; padding: 0.35rem 0.6rem; border: 1px solid var(--wall); background: var(--surface); color: var(--ink); cursor: pointer; margin-left: -1px; }
+.lm-tools button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.lm-tools button:hover { border-color: var(--accent); }
+.lm-hint { position: absolute; left: 0.6rem; bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; pointer-events: none; }
+.lm-tip { position: absolute; z-index: 2; pointer-events: none; transform: translate(-50%, calc(-100% - 12px)); background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 0.72rem; padding: 0.3rem 0.5rem; white-space: nowrap; }
+.lm-tip[hidden] { display: none; }
+.lm-mk { cursor: pointer; }
+.lm-mk:focus { outline: none; }
+.lm-mk:focus .lm-ring, .lm-mk:hover .lm-ring { stroke: var(--accent); stroke-opacity: 1; }
+.lm-legend { padding: 1rem; display: grid; gap: 0.25rem; align-content: start; }
+.lm-legend p { margin: 0.6rem 0 0.2rem; font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.lm-legend p:first-child { margin-top: 0; }
+.lm-layer { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; padding: 0.3rem 0.4rem; border: 1px solid transparent; background: none; color: var(--ink); font: inherit; font-size: 0.9rem; text-align: left; cursor: pointer; }
+.lm-layer:hover { border-color: var(--line); }
+.lm-layer[aria-pressed="false"] { color: var(--muted); }
+.lm-layer[aria-pressed="false"] svg { opacity: 0.3; }
+.lm-layer:disabled { cursor: default; color: var(--muted); }
+.lm-layer:disabled:hover { border-color: transparent; }
+.lm-layer small { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
+.lm-layer svg { width: 1.4rem; height: 1rem; overflow: visible; }
+@media (max-width: 860px) {
+  .lm { grid-template-columns: minmax(0, 1fr); }
+  .lm-stage { border-right: 0; border-bottom: 1px solid var(--line); }
+  .lm-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lm-legend p { grid-column: 1 / -1; }
+  .lm-tools { position: static; padding: 0.6rem; border-bottom: 1px solid var(--line); }
+  .lm-hint { display: none; }
+}
+@media (max-width: 520px) { .lm-legend { grid-template-columns: minmax(0, 1fr); } }
+
+
+/* Level design entries */
+.ld-list { display: grid; border-top: 1px solid var(--wall); }
+.ld-item { display: grid; grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: 1.25rem; padding-block: 1.25rem; border-bottom: 1px solid var(--line); align-items: start; }
+.ld-thumb { width: 9rem; max-width: 100%; aspect-ratio: 4 / 3; border: 1px solid var(--line); background: var(--surface); }
+.ld-thumb svg { display: block; width: 100%; height: 100%; }
+.ld-meta { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); margin: 0.35rem 0 0.5rem; }
+.ld-focus { margin: 0; }
+.ld-focus b { font-family: var(--font-mono); font-weight: 500; font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); display: block; }
+.ld-points { margin: 0.4rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.94rem; }
+
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.06em; text-decoration: none; padding: 0.45rem 0.75rem; border: 1px solid var(--ink); background: var(--ink); color: var(--bg); white-space: nowrap; cursor: pointer; }
+.btn:hover { background: var(--accent); border-color: var(--accent); }
+.btn.pending { background: transparent; color: var(--muted); border-style: dashed; border-color: var(--muted); cursor: default; }
+
+
+/* Projects deck: image planes on a diagonal, each in a frame of green particles */
+.filters-row { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; }
+.filters-row .filters { margin-bottom: 0; }
+.view-toggle { flex: none; }
+#room-projects .proj-grid { display: none; }
+#room-projects.as-list .proj-grid { display: grid; }
+#room-projects.as-list .deck { display: none; }
+.deck {
+  position: relative; height: clamp(30rem, 72vh, 44rem); margin-bottom: 1.5rem; outline: none;
+  background: radial-gradient(ellipse 60% 70% at 65% 45%, rgba(92, 207, 134, 0.07), transparent 70%), #080b0a;
+  border: 1px solid var(--line); overflow: hidden; display: grid; grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  touch-action: pan-y; user-select: none;
+}
+.deck:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.deck-stack { position: relative; grid-column: 2; grid-row: 1; perspective: 1400px; perspective-origin: 40% 40%; }
+.dk-card {
+  position: absolute; left: 42%; top: 58%; width: min(30rem, 62%); aspect-ratio: 16 / 9; transform-style: preserve-3d;
+  cursor: pointer; will-change: transform, opacity; transition: filter 0.3s, opacity 0.3s;
+}
+.dk-face { position: absolute; inset: 0; overflow: hidden; background: var(--surface); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55); }
+.dk-face svg, .dk-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.dk-face::after { content: ""; position: absolute; inset: 0; background: #080b0a; opacity: var(--dim, 0); pointer-events: none; }
+/* The particle frame: two dot grids drifting in opposite directions, masked to a band around the image. */
+.dk-card::before {
+  content: ""; position: absolute; inset: -12px; padding: 7px; pointer-events: none; opacity: 0.45; transition: opacity 0.3s;
+  background:
+    radial-gradient(circle, rgba(130, 235, 168, 0.95) 0 0.9px, transparent 1.5px) 0 0 / 6px 6px,
+    radial-gradient(circle, rgba(92, 207, 134, 0.75) 0 0.8px, transparent 1.4px) 3px 2px / 9px 7px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: dk-drift 9s linear infinite; filter: drop-shadow(0 0 3px rgba(92, 207, 134, 0.6));
+}
+.dk-card.is-front::before, .dk-card:hover::before { opacity: 1; }
+@keyframes dk-drift { to { background-position: 60px 30px, -54px 42px; } }
+.dk-num { position: absolute; left: 0; top: -1.6rem; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em; color: var(--accent); opacity: 0.8; }
+.deck.opening .dk-card:not(.is-open) { opacity: 0 !important; transition: opacity 0.35s; }
+.dk-card.is-open { z-index: 999 !important; }
+.deck-info { grid-column: 1; grid-row: 1; align-self: center; position: relative; z-index: 2; padding: 1.5rem; display: grid; gap: 0.6rem; transition: opacity 0.25s, filter 0.25s; }
+.deck-info.swap { opacity: 0; filter: blur(6px); }
+.dk-count { margin: 0; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.dk-count b { color: var(--accent); font-weight: 500; font-size: 1rem; }
+.dk-title { margin: 0; font-family: var(--font-display); font-weight: 800; text-transform: uppercase; font-size: clamp(2.2rem, 4.5vw, 3.4rem); line-height: 0.92; }
+.dk-kind { margin: 0; font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+.dk-desc { margin: 0; font-size: 0.94rem; }
+.dk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+.dk-empty { color: var(--muted); font-family: var(--font-mono); }
+@media (max-width: 760px) {
+  .deck { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(15rem, 1fr) auto; height: auto; min-height: 36rem; }
+  .deck-stack { grid-column: 1; grid-row: 1; min-height: 19rem; }
+  .dk-card { left: 40%; top: 62%; width: 64%; }
+  .deck-info { grid-column: 1; grid-row: 2; align-self: start; padding: 0.5rem 1rem 4rem; }
+  .dk-desc { font-size: 0.88rem; }
+}
+@media (prefers-reduced-motion: reduce) { .dk-card::before { animation: none; } }
+/* Project grid */
+.filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.25rem; }
+.filter { font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.35rem 0.7rem; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.filter[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.filter:hover { border-color: var(--accent); }
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+.proj { background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.proj-map { aspect-ratio: 16 / 7; max-width: 100%; border-bottom: 1px solid var(--line); position: relative; }
+.proj-map svg { display: block; width: 100%; height: 100%; }
+.proj-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.proj-status { z-index: 1; }
+.proj-status { position: absolute; top: 0.5rem; left: 0.5rem; }
+.proj-status .tag { background: var(--surface); }
+.proj-body { padding: 1rem 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+.proj-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
+.proj-date { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.proj-kind { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); margin: 0; }
+.proj-desc { margin: 0; font-size: 0.94rem; }
+.proj-role { margin: 0; font-size: var(--step--1); }
+.proj-role span { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.proj-foot { margin-top: auto; padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.proj-len { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.proj-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+a.proj-map { display: block; color: inherit; text-decoration: none; overflow: hidden; }
+.proj-open-hint { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 1; font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; background: var(--ink); color: var(--bg); padding: 0.2rem 0.5rem; opacity: 0; transition: opacity 0.2s; }
+a.proj-map:hover .proj-open-hint, a.proj-map:focus-visible .proj-open-hint { opacity: 1; }
+a.proj-map .proj-img { transition: transform 0.4s; }
+a.proj-map:hover .proj-img { transform: scale(1.04); }
+.proj-top h3 a { text-decoration: none; }
+.proj-top h3 a:hover { color: var(--accent); }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.ghost:hover { color: var(--accent); border-color: var(--accent); background: transparent; }
+
+/* Project page */
+.pp-hero-wide { margin: 0 0 2.5rem; }
+.pp-hero-wide img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--wall); background: #fff; }
+/* Small pixel-art images scale up crisply instead of blurring */
+.pp-hero-wide.pixel img, .proj-img.pixel { image-rendering: pixelated; }
+.pp-hero-wide figcaption, .pp-doc figcaption { margin-top: 0.6rem; font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); max-width: 46rem; }
+.pp-gallery.pp-gallery-few { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pp-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.pp-steps li { counter-increment: st; display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 0.1rem 0.75rem; }
+.pp-steps li::before { content: counter(st, decimal-leading-zero); grid-row: span 2; font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; line-height: 1; color: var(--accent); }
+.pp-steps b { font-family: var(--font-mono); font-weight: 500; font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.08em; }
+.pp-steps span { color: var(--muted); }
+.pp-doc { margin: 0; }
+.pp-video { position: relative; aspect-ratio: 16 / 9; max-width: 100%; border: 1px solid var(--wall); background: #000; }
+.pp-video-pending { display: grid; place-items: center; background: var(--surface); border-style: dashed; border-color: var(--muted); margin-bottom: 2.5rem; }
+.pp-video-pending .pp-pending { border: 0; }
+.nl-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; margin-bottom: 2.5rem; }
+.nl-plan { margin: 0; border: 1px solid var(--wall); background: #fff; position: relative; }
+.nl-plan img { display: block; width: 100%; max-width: 100%; height: auto; cursor: zoom-in; }
+.nl-plan figcaption { padding: 0.75rem 1rem; border-top: 1px solid var(--line); background: var(--surface); font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+.nl-tabs { position: static; padding: 0.6rem; border-bottom: 1px solid var(--line); background: var(--surface); }
+.nl-col { position: sticky; top: 1.5rem; display: grid; gap: 0; }
+.nl-col .pp-video { margin-bottom: 2rem; }
+.nl-notes { display: grid; gap: 1.5rem; }
+@media (max-width: 860px) { .nl-split { grid-template-columns: minmax(0, 1fr); } .nl-col { position: static; } }
+.pp-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.pp-doc img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
+.pp-hero { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 2.5rem; align-items: end; margin-bottom: 2.5rem; }
+.pp-hero .room-head { margin-bottom: 0; }
+.pp-key { display: block; width: 100%; max-width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--wall); box-shadow: 10px 10px 0 var(--accent-soft); }
+.my-role { margin: 0.9rem 0 0; padding: 0.35rem 0 0.4rem 0.85rem; border-left: 3px solid var(--accent); }
+.my-role span { display: block; font-family: var(--font-mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.2rem; }
+.my-role b { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--step-1); line-height: 1.15; letter-spacing: 0.02em; color: var(--accent); }
+.room-head .my-role b { font-size: 1.6rem; }
+.pp-tagline { margin: 0.75rem 0 0; font-size: var(--step-1); line-height: 1.4; max-width: 34rem; text-wrap: pretty; }
+@media (max-width: 860px) { .pp-hero { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; } .pp-key { max-width: 22rem; } }
+.pp-gallery { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+.pp-shot { position: relative; margin: 0; aspect-ratio: 16 / 9; max-width: 100%; border: 1px solid var(--line); background: var(--surface); overflow: hidden; }
+.pp-shot svg { display: block; width: 100%; height: 100%; }
+.pp-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pp-shot-main { grid-row: span 2; aspect-ratio: auto; min-height: 16rem; }
+.pp-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 2.5rem; }
+.pp-about { margin: 0; max-width: 40rem; }
+.pp-pending { margin: 0; font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); border: 1px dashed var(--muted); padding: 0.75rem 1rem; }
+.pp-side { display: grid; gap: 1.25rem; align-content: start; padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }
+.pp-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+@media (max-width: 860px) { .pp-gallery, .pp-grid { grid-template-columns: minmax(0, 1fr); } .pp-shot-main { grid-row: auto; aspect-ratio: 16 / 9; min-height: 0; } }
+
+/* Experience: four equal roll-down rows */
+.xp-list { border-top: 1px solid var(--wall); }
+.xp { border-bottom: 1px solid var(--line); }
+.xp summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 11rem minmax(0, 1fr) auto; align-items: center; gap: 1rem; min-height: 4.75rem; padding-block: 0.9rem; }
+.xp summary::-webkit-details-marker { display: none; }
+.xp summary:hover .xp-what b { color: var(--accent); }
+.xp-when { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.xp-what { display: grid; gap: 0.1rem; min-width: 0; }
+.xp-what b { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); line-height: 1.05; text-transform: uppercase; letter-spacing: 0.02em; transition: color 0.15s; }
+.xp-what span { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+.xp-icon { width: 1.75rem; height: 1.75rem; border: 1px solid var(--wall); position: relative; flex: none; }
+.xp-icon::before, .xp-icon::after { content: ""; position: absolute; left: 50%; top: 50%; width: 0.75rem; height: 2px; background: var(--ink); transform: translate(-50%, -50%); transition: transform 0.2s; }
+.xp-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+.xp[open] .xp-icon::after { transform: translate(-50%, -50%) rotate(0deg); }
+.xp[open] .xp-icon { background: var(--accent-soft); border-color: var(--accent); }
+.xp-body { padding: 0 0 1.5rem 12rem; display: grid; gap: 1.25rem; max-width: 60rem; }
+.xp-body p { margin: 0; }
+.xp[open] .xp-body { animation: fade 0.3s ease-out; }
+.xp-points { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.4rem; }
+.xp-level { display: grid; grid-template-columns: 9rem minmax(0, 1fr) auto; gap: 1.25rem; align-items: start; padding: 1rem; border: 1px solid var(--line); background: var(--surface); }
+.xp-level h3 { margin: 0.15rem 0 0.5rem; }
+.xp-level-label { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+@media (max-width: 860px) {
+  .xp summary { grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 1rem; }
+  .xp-when { grid-column: 1 / -1; }
+  .xp-body { padding-left: 0; }
+  .xp-level { grid-template-columns: 6.5rem minmax(0, 1fr); }
+  .xp-level .ld-thumb { width: 6.5rem; }
+  .xp-level .btn { grid-column: 1 / -1; justify-self: start; }
+}
+/* Experience */
+.job { border-left: 3px solid var(--accent); padding-left: 1.25rem; }
+.job-meta { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); margin: 0.35rem 0 0.75rem; }
+.job ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.4rem; }
+.side-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.side-list li { display: grid; gap: 0.15rem; }
+.side-list .when { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.skills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.skills h4, .played-h { font-family: var(--font-mono); font-weight: 500; font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.5rem; }
+.skills p { margin: 0; }
+.played { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; font-size: 0.94rem; }
+.played li { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dotted var(--line); }
+.played .hrs { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Contact */
+.contact { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+.email { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); letter-spacing: 0.01em; user-select: all; overflow-wrap: anywhere; line-height: 1; }
+.copy-status { font-family: var(--font-mono); font-size: var(--step--1); color: var(--accent); min-height: 1.2em; }
+.play-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.play-links a { display: flex; justify-content: space-between; gap: 1rem; text-decoration: none; padding-block: 0.4rem; border-bottom: 1px solid var(--line); }
+.play-links a:hover { color: var(--accent); }
+.play-links span { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+
+/* ---------- Work ID title ---------- */
+/* The title is one fixed look in both themes: a dark steel blast gate. */
+#title {
+  position: fixed; inset: 0; z-index: 20; overflow: hidden; touch-action: none; user-select: none;
+  --bg: #0e1110; --surface: #1b1f1d; --ink: #e8ebe9; --muted: #9aa49e; --line: #2f3532; --accent: #5ccf86;
+  --steel: #2a2f2d; --steel-hi: #3a403d; --steel-lo: #1c201e; --hazard: #e0b23c; --red: #c8302a;
+  color: var(--ink); background: var(--bg);
+}
+#title.opening { background: transparent; }
+.gate { position: absolute; inset: 0; pointer-events: none; }
+.gate-panel {
+  position: absolute; top: 0; bottom: 0; width: 50%;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.35), transparent 18%, transparent 82%, rgba(0,0,0,0.45)),
+    repeating-linear-gradient(90deg, var(--steel) 0 34px, var(--steel-hi) 34px 37px, var(--steel-lo) 37px 40px);
+  transition: transform 1.5s cubic-bezier(.7,0,.25,1);
+}
+.gate-l { left: 0; box-shadow: inset -2px 0 0 #000; }
+.gate-r { right: 0; box-shadow: inset 2px 0 0 #000; }
+.gate-beam {
+  position: absolute; left: 0; right: 0; height: 46px; background: linear-gradient(180deg, var(--steel-hi), var(--steel-lo));
+  box-shadow: 0 6px 14px -6px #000;
+}
+.gate-beam::after {
+  content: ""; position: absolute; inset: 8px 14px; background: radial-gradient(circle, #59605c 0 3px, transparent 3.5px) 0 0 / 28px 30px repeat-x;
+}
+.gate-beam.b1 { top: 16%; } .gate-beam.b2 { top: 62%; }
+.gate-hazard { position: absolute; top: 0; bottom: 0; width: 30px; background: repeating-linear-gradient(-45deg, var(--hazard) 0 16px, #111 16px 32px); opacity: 0.92; }
+.gate-l .gate-hazard { right: 0; } .gate-r .gate-hazard { left: 0; }
+.gate-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; background: repeating-linear-gradient(-45deg, var(--hazard) 0 16px, #111 16px 32px); opacity: 0.85; }
+.gate-stencil { position: absolute; top: 34%; font-family: var(--font-display); font-weight: 800; font-size: clamp(4rem, 14vw, 11rem); line-height: 1; color: rgba(255,255,255,0.05); letter-spacing: 0.02em; }
+.gate-l .gate-stencil { right: 48px; } .gate-r .gate-stencil { left: 48px; }
+.gate-lock { position: absolute; top: calc(50% - 46px); width: 46px; height: 92px; overflow: hidden; }
+.gate-l .gate-lock { right: 0; } .gate-r .gate-lock { left: 0; }
+.gate-lock::before { content: ""; position: absolute; top: 0; width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle, #59605c 0 12px, #2a2f2d 13px 30px, #59605c 31px 34px, #1c201e 35px); transition: transform 0.5s ease-in-out; }
+.gate-l .gate-lock::before { left: 0; } .gate-r .gate-lock::before { right: 0; }
+#title.opening .gate-lock::before { transform: rotate(120deg); }
+#title.opening .gate-l { transform: translateX(-102%); transition-delay: 0.55s; }
+#title.opening .gate-r { transform: translateX(102%); transition-delay: 0.55s; }
+.gate-sign { position: absolute; top: calc(62% + 13px); left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--hazard); white-space: nowrap; z-index: 1; transition: opacity 0.3s; }
+.beacon { position: absolute; top: 10px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #5a2320; z-index: 1; }
+#title.opening .beacon { background: var(--hazard); box-shadow: 0 0 24px 6px rgba(224,178,60,0.6); animation: beacon 0.35s steps(2) infinite; }
+@keyframes beacon { 50% { opacity: 0.35; } }
+#title.opening #strap, #title.opening .badge, #title.opening .reader, #title.opening .title-copy, #title.opening .gate-sign { opacity: 0; transition: opacity 0.35s; }
+@media (prefers-reduced-motion: reduce) { .gate-panel, .gate-lock::before { transition: none; } #title.opening .beacon { animation: none; } }
+#title[hidden] { display: none !important; }
+#strap { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.badge { --surface: #fbfbf8; --ink: #1a1d1c; --muted: #6a716d; --line: #d6dad6; --bg: #eef0ee; --hatch: rgba(0,0,0,0.07); --accent: #23874a; color: var(--ink); position: absolute; z-index: 2; left: 0; top: 0; width: var(--bw); height: var(--bh); cursor: grab; perspective: 900px; will-change: transform; --bw: 248px; --bh: 360px; }
+.badge.dragging { cursor: grabbing; }
+.badge-flip { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+.badge.flipped .badge-flip { transform: rotateY(180deg); }
+.badge-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 50px -16px rgba(0,0,0,0.8); }
+.badge-back { transform: rotateY(180deg); padding-bottom: 1rem; }
+.b-top { height: 34px; background: var(--ink); display: grid; place-items: center; flex: none; }
+.b-slot { width: 46px; height: 9px; border-radius: 9px; background: var(--bg); }
+.b-head { display: flex; justify-content: space-between; padding: 0.55rem 0.9rem 0; font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.b-photo { margin: 0.6rem 0.9rem 0; height: 132px; border: 1px dashed var(--muted); background: repeating-linear-gradient(45deg, var(--hatch) 0 8px, transparent 8px 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem; }
+.b-photo span { font-family: var(--font-display); font-weight: 800; font-size: 2.4rem; line-height: 1; }
+.b-photo small { font-family: var(--font-mono); font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.b-name { font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; line-height: 0.88; text-transform: uppercase; padding: 0.7rem 0.9rem 0; }
+.b-role { margin: 0.45rem 0.9rem 0; align-self: flex-start; font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; background: var(--accent); color: var(--surface); padding: 0.15rem 0.45rem; }
+.b-fields { margin: 0.6rem 0.9rem 0; display: grid; grid-template-columns: auto 1fr; gap: 0.1rem 0.6rem; font-size: 0.72rem; }
+.b-fields dt { font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding-top: 0.12rem; }
+.b-fields dd { margin: 0; }
+.b-foot { margin-top: auto; padding: 0 0.9rem 0.75rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 0.5rem; }
+.b-barcode { display: flex; align-items: stretch; height: 26px; gap: 1px; }
+.b-barcode i { display: block; background: var(--ink); }
+.b-clear { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 0.95; color: var(--accent); text-transform: uppercase; text-align: right; }
+.b-back-h { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; line-height: 1; text-transform: uppercase; margin: 0.9rem 0.9rem 0.4rem; }
+.b-back-list { list-style: none; margin: 0; padding: 0 0.9rem; display: grid; gap: 0.5rem; font-size: 0.76rem; line-height: 1.35; }
+.b-back-list span { display: block; font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.b-back-note { margin: auto 0.9rem 0; font-family: var(--font-mono); font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+
+.reader { position: absolute; z-index: 1; width: 150px; height: 210px; background: #121514; border: 1px solid #3a403d; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 18px 40px -20px rgba(0,0,0,0.5); transition: box-shadow 0.2s; }
+.reader.armed { box-shadow: 0 0 0 3px var(--red), 0 18px 40px -20px rgba(0,0,0,0.5); }
+.reader-screen { width: 100%; height: 52px; background: var(--red); color: #fff; transition: background 0.2s; border-radius: 4px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; }
+.reader.armed .reader-screen { background: #e0453c; }
+.reader.granted .reader-screen { background: #23a557; }
+.reader-slot { width: 80%; height: 6px; border-radius: 6px; background: #000; box-shadow: 0 1px 0 #3a403d; }
+.reader-led { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); }
+.reader-led { background: #5a2320; }
+.reader.armed .reader-led { background: var(--red); box-shadow: 0 0 10px var(--red); }
+.reader.granted .reader-led { background: #23a557; box-shadow: 0 0 12px #23a557; }
+.reader-label { margin-top: auto; font-family: var(--font-mono); font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: #9aa49e; text-align: center; }
+
+.title-copy { position: absolute; z-index: 1; padding: 0.9rem 1rem; background: rgba(14,17,16,0.82); border: 1px solid #3a403d; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); max-width: 24rem; display: grid; gap: 0.6rem; justify-items: start; }
+.title-hint { margin: 0; font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+@media (min-width: 861px) { .title-copy { left: max(48px, env(safe-area-inset-left, 0px)); bottom: 3rem; } }
+@media (max-width: 520px) { .badge { --bw: 210px; --bh: 306px; } .b-head { font-size: 0.52rem; letter-spacing: 0.04em; } .b-photo { height: 96px; } .b-photo span { font-size: 2rem; } .b-name { font-size: 1.7rem; padding-top: 0.5rem; } .b-fields { font-size: 0.64rem; margin-top: 0.45rem; } .b-foot { padding-bottom: 0.6rem; } .b-back-list { font-size: 0.68rem; gap: 0.35rem; } .reader { width: 120px; height: 150px; gap: 10px; } .reader-screen { height: 40px; font-size: 0.6rem; } }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 50; pointer-events: auto; }
+#fx[hidden] { display: none !important; }
+.fade-in { animation: fade 0.35s ease-out; }
+@keyframes fade { from { opacity: 0.001; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+
+@media (max-width: 860px) {
+  .wb-grid, .two-col, .skills { grid-template-columns: minmax(0, 1fr); }
+  .ld-item { grid-template-columns: 6.5rem minmax(0, 1fr); }
+  .ld-thumb { width: 6.5rem; }
+  .ld-item .ld-points-col, .ld-item .ld-action { grid-column: 1 / -1; }
+  .titleblock { grid-template-columns: minmax(0, 1fr) auto; }
+  .titleblock > div:nth-child(2) { border-right: 0; }
+  .titleblock > div:last-child { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+  .minimap-label { display: none; }
+}
+
+/* ---------- Phones and touch screens ---------- */
+/* Fingers need bigger targets than a mouse pointer; desktop sizes stay as they were. */
+@media (hover: none) and (pointer: coarse) {
+  .back { min-height: 44px; }
+  .filter { min-height: 40px; }
+  .next-door { gap: 0.25rem 1rem; }
+  .next-door a { display: inline-flex; align-items: center; gap: 0.35em; min-height: 44px; }
+  .pb-lift button { min-height: 40px; align-items: center; }
+  .dk-card::before { filter: none; }
+}
+@media (max-width: 760px) {
+  /* Role filters become one swipeable row so the project stack is not pushed off the screen. */
+  .filters-row { flex-wrap: nowrap; align-items: center; gap: 0.5rem; }
+  .filters-row .filters { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    -webkit-mask: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent); mask: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent); padding-right: 1.5rem; }
+  .filters-row .filters::-webkit-scrollbar { display: none; }
+  .filters-row .filter { flex: none; white-space: nowrap; }
+}
+@media (max-width: 520px) {
+  .email { font-size: min(var(--step-3), 8.4vw); }
+}
+</style>
+</head>
+<body>
+
+<!-- Opening title: a work ID badge on a lanyard. Swipe it at the reader to enter the floor plan. -->
+<section id="title" aria-label="Work ID">
+  <div class="gate" aria-hidden="true">
+    <div class="gate-panel gate-l"><div class="gate-beam b1"></div><div class="gate-beam b2"></div><span class="gate-stencil">R-</span><div class="gate-lock"></div><div class="gate-hazard"></div><div class="gate-foot"></div></div>
+    <div class="gate-panel gate-r"><div class="gate-beam b1"></div><div class="gate-beam b2"></div><span class="gate-stencil">00</span><div class="gate-lock"></div><div class="gate-hazard"></div><div class="gate-foot"></div></div>
+    <span class="beacon"></span>
+    <span class="gate-sign">Sector R-00 · Badge required</span>
+  </div>
+  <canvas id="strap" aria-hidden="true"></canvas>
+  <div class="badge" id="badge" role="img" aria-label="Work ID badge, Game Designer. Drag it to the reader to enter, or double-click it to flip it over.">
+    <div class="badge-flip" id="badge-flip">
+      <div class="badge-face badge-front">
+        <div class="b-top"><span class="b-slot"></span></div>
+        <div class="b-head"><span>Portfolio · Work ID</span><span>MD-LD-01</span></div>
+        <div class="b-photo"><span>MD</span></div>
+        <div class="b-role" data-touch="Double-Tap">Double-Click</div>
+        <dl class="b-fields">
+          <dt>Study</dt><dd>USC · Games + Film</dd>
+          <dt>Based</dt><dd>Los Angeles / China</dd>
+          <dt>Access</dt><dd>All rooms · R-01 to R-05</dd>
+        </dl>
+        <div class="b-foot"><span class="b-barcode" id="barcode"></span><span class="b-clear">Game Designer</span></div>
+      </div>
+      <div class="badge-face badge-back">
+        <div class="b-top"><span class="b-slot"></span></div>
+        <p class="b-back-h">You found it!</p>
+        <ul class="b-back-list">
+          <li><span>Focus</span>Level design, visual storytelling, cinematic lighting</li>
+          <li><span>Last post</span>Level design intern, Shanda Games DNA Studio</li>
+          <li><span>Tools</span>Unity, C# / C++, P4V, GitHub</li>
+          <li><span>Contact</span>David3150920@outlook.com</li>
+        </ul>
+        <p class="b-back-note" data-touch="Double-tap to flip back">Double-click to flip back</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="reader" id="reader" aria-hidden="true">
+    <div class="reader-screen" id="reader-screen">Tap badge</div>
+    <div class="reader-slot"></div>
+    <span class="reader-led" id="reader-led"></span>
+    <span class="reader-label">R-00 · Lobby reader</span>
+  </div>
+
+</section>
+
+<!-- Floor plan -->
+<main id="home" aria-label="Portfolio building">
+  <div class="plan">
+    <svg id="plan" hidden aria-hidden="true"></svg>
+    <canvas id="pb" aria-hidden="true"></canvas>
+    <p class="pb-cap" id="pb-cap" aria-live="polite"></p>
+    <nav class="pb-lift" id="pb-lift" aria-label="Floors. Each floor is a section of the portfolio."></nav>
+  </div>
+  <div class="titleblock" hidden>
+    <div>
+      <span class="tb-label">Drawn by</span>
+      <p class="tb-name"><a href="#" class="tb-link" title="Back to my work ID">Mingqian Dong</a></p>
+      <span class="tb-role">Level Designer</span>
+    </div>
+    <div>
+      <span class="tb-label">Sheet</span>
+      <p class="tb-hint">A-01 Portfolio<br>Scale 1:100</p>
+    </div>
+    <div>
+      <span class="tb-label">Objective</span>
+      <p class="tb-hint" id="tb-hint" aria-live="polite" data-touch="Tap a floor to look inside, tap again to go in. &lt;b&gt;Level Design&lt;/b&gt; is on 2F.">Hover a floor to look inside, click to go in. <b>Level Design</b> is on 2F.</p>
+    </div>
+  </div>
+</main>
+
+<!-- Room pages -->
+<div id="rooms">
+
+<article class="roomview wrap" id="room-about" data-room="about" hidden>
+  <div class="roombar"><a class="back" href="#map">← Back to the building</a><div class="minimap"></div></div>
+  <div class="walls">
+    <header class="room-head">
+      <p class="eyebrow">R-01 · Spawn</p>
+      <h1>About me</h1>
+      <p class="intro">I'm Mingqian Dong (MD), a level designer studying game design and film at USC.</p>
+    </header>
+    <div class="two-col">
+      <div>
+        <p style="margin-top:0">I approach levels the way a cinematographer approaches a shot: what the player sees first, where their eye goes next, and what the space says about the people who lived in it. I care most about paths that guide without signposts, rooms that tell a story before anyone speaks, and co-op challenges that need both players.</p>
+        <p>Across seven projects I have worked on level design, lighting, set dressing, engineering, 2D art and production, in teams from solo to 40 people. Most recently I was a level design intern at Shanda Games, DNA Studio, where I built a co-op dungeon for a closed beta.</p>
+        <dl class="facts" style="margin-top:1.5rem">
+          <dt>Study</dt><dd>USC, Interactive Media &amp; Game Design BFA, and Cinema &amp; Media Studies BA</dd>
+          <dt>Based</dt><dd>Los Angeles / China</dd>
+          <dt>Focus</dt><dd>Level design, visual storytelling, cinematic lighting</dd>
+          <dt>Languages</dt><dd>Chinese (native), English, Spanish (4 years of study)</dd>
+        </dl>
+      </div>
+      <div>
+        <p class="played-h">What I play</p>
+        <ul class="played">
+          <li>Elden Ring <span class="hrs">100% complete</span></li>
+          <li>Hearthstone <span class="hrs">7 years</span></li>
+          <li>Counter-Strike <span class="hrs">700+ h</span></li>
+          <li>Battlefield 1 / 5 / 6 <span class="hrs">300+ h</span></li>
+          <li>Slay the Spire 1 &amp; 2 <span class="hrs">300+ h</span></li>
+          <li>Overwatch <span class="hrs">4 years</span></li>
+          <li>Baldur's Gate <span class="hrs">100+ h</span></li>
+          <li>Age of Empires IV <span class="hrs">100+ h</span></li>
+        </ul>
+      </div>
+    </div>
+    <nav class="next-door" aria-label="Other rooms"></nav>
+  </div>
+</article>
+
+<article class="roomview wrap" id="room-level-design" data-room="level-design" hidden>
+  <div class="roombar"><a class="back" href="#map">← Back to the building</a><div class="minimap"></div></div>
+  <div class="walls">
+    <header class="room-head">
+      <p class="eyebrow">R-02 · Main hall</p>
+      <h1>Level Design</h1>
+      <p class="intro">White box levels I'm building now to show how I plan space, pacing and player flow. Finished games I worked on are in Projects.</p>
+    </header>
+    <p class="subhead first">White box levels · in development</p>
+    <div class="wb-grid" id="wb-grid"></div>
+    <nav class="next-door" aria-label="Other rooms"></nav>
+  </div>
+</article>
+
+<article class="roomview wrap" id="room-projects" data-room="projects" hidden>
+  <div class="roombar"><a class="back" href="#map">← Back to the building</a><div class="minimap"></div></div>
+  <div class="walls">
+    <header class="room-head">
+      <p class="eyebrow">R-03 · Gallery</p>
+      <h1>All Projects</h1>
+      <p class="intro" data-touch="Every game I've worked on, newest first. Swipe through the stack, filter by the role I held, and tap the front image to open a project.">Every game I've worked on, newest first. Scroll through the stack, filter by the role I held, and click the front image to open a project.</p>
+    </header>
+    <div class="filters-row">
+      <div class="filters" id="filters" role="group" aria-label="Filter projects by role"></div>
+      <button class="filter view-toggle" id="proj-view" type="button" aria-pressed="false">Show as list</button>
+    </div>
+    <section class="deck" id="deck" tabindex="0" aria-label="Projects. Roll the mouse wheel or use the arrow keys to move through the list, and click the front project to open it.">
+      <div class="deck-stack" id="deck-stack"></div>
+      <div class="deck-info" id="deck-info" aria-live="polite"></div>
+    </section>
+    <div class="proj-grid" id="proj-grid"></div>
+    <nav class="next-door" aria-label="Other rooms"></nav>
+  </div>
+</article>
+
+<article class="roomview wrap" id="room-project" data-room="project" hidden>
+  <div class="roombar"><a class="back" href="#projects">← Back to projects</a><div class="minimap"></div></div>
+  <div class="walls"><div class="pp-content"></div>
+    <nav class="next-door" aria-label="Other rooms"><a href="#projects">← R-03 <b>All projects</b></a><a href="#map"><b>Floor plan</b> →</a></nav>
+  </div>
+</article>
+
+<article class="roomview wrap" id="room-whitebox" data-room="whitebox" hidden>
+  <div class="roombar"><a class="back" href="#level-design">← Back to level design</a><div class="minimap"></div></div>
+  <div class="walls"><div class="wbp-content"></div>
+    <nav class="next-door" aria-label="Other rooms"><a href="#level-design">← R-02 <b>Level design</b></a><a href="#map"><b>Floor plan</b> →</a></nav>
+  </div>
+</article>
+
+<article class="roomview wrap" id="room-experience" data-room="experience" hidden>
+  <div class="roombar"><a class="back" href="#map">← Back to the building</a><div class="minimap"></div></div>
+  <div class="walls">
+    <header class="room-head">
+      <p class="eyebrow">R-04 · Office</p>
+      <h1>Experience</h1>
+      <p class="intro">Studio work, events and the tools I use. Open a row to see the details.</p>
+    </header>
+    <div class="xp-list">
+      <details class="xp" name="xp">
+        <summary><span class="xp-when">2026.05 to 2026.08</span><span class="xp-what"><b>Level Design Intern</b><span>Shanda Games, DNA Studio</span></span><span class="xp-icon" aria-hidden="true"></span></summary>
+        <div class="xp-body">
+          <ul class="xp-points">
+            <li>Delivered Phase 2 of the game's marriage feature for its third closed beta test.</li>
+            <li>Wrote level design documents and designed dungeon challenges around couple co-op play and new gameplay mechanics.</li>
+            <li>Configured enemies, NPCs, interactable objects, dungeon-exclusive skills and drop rewards.</li>
+          </ul>
+          <article class="xp-level">
+            <div class="ld-thumb" id="honeymoon-thumb"></div>
+            <div>
+              <p class="xp-level-label">Level · Professional, unreleased</p>
+              <h3>Interstellar Honeymoon</h3>
+              <p class="ld-focus"><b>Design focus</b>Couple co-op dungeon</p>
+              <ul class="ld-points">
+                <li>8-map dungeon for the third closed beta</li>
+                <li>Challenges built around two-player co-op and new mechanics</li>
+                <li>Level design docs, enemy, NPC and reward configuration</li>
+              </ul>
+            </div>
+            <span class="btn pending">Under NDA</span>
+          </article>
+        </div>
+      </details>
+      <details class="xp" name="xp">
+        <summary><span class="xp-when">2026.05 to 2026.06</span><span class="xp-what"><b>Game Designer Camp</b><span>Tencent IEG and TCAMP</span></span><span class="xp-icon" aria-hidden="true"></span></summary>
+        <div class="xp-body"><p>Took part in the first Game Designer Camp run by Tencent IEG and TCAMP.</p></div>
+      </details>
+      <details class="xp" name="xp">
+        <summary><span class="xp-when">May 2026</span><span class="xp-what"><b>USC Expo</b><span>University of Southern California</span></span><span class="xp-icon" aria-hidden="true"></span></summary>
+        <div class="xp-body"><p>Helped run USC Expo, exhibiting the 2025 to 2026 student games to over 400 visitors.</p></div>
+      </details>
+      <details class="xp" name="xp">
+        <summary><span class="xp-when">Game media</span><span class="xp-what"><b>Interview Editor</b><span>第九波 Bo</span></span><span class="xp-icon" aria-hidden="true"></span></summary>
+        <div class="xp-body"><p>Edited interviews for the Chinese game outlet 第九波 Bo, including with Nicolo Laurent and Gustavo Steinberg.</p></div>
+      </details>
+    </div>
+    <p class="subhead">Tools</p>
+    <div class="skills">
+      <div><h4>Game production</h4><p>Unity, C++ / C#, P4V, GitHub, Steamworks, Aseprite</p></div>
+      <div><h4>Media</h4><p>Premiere Pro, Photoshop, Lightroom</p></div>
+    </div>
+    <nav class="next-door" aria-label="Other rooms"></nav>
+  </div>
+</article>
+
+<article class="roomview wrap" id="room-contact" data-room="contact" hidden>
+  <div class="roombar"><a class="back" href="#map">← Back to the building</a><div class="minimap"></div></div>
+  <div class="walls">
+    <header class="room-head">
+      <p class="eyebrow">R-05 · Exit</p>
+      <h1>Contact</h1>
+      <p class="intro">I'm looking for level design roles. Résumé available on request.</p>
+    </header>
+    <div class="contact">
+      <span class="email" id="email">David3150920<wbr>@outlook.com</span>
+      <button class="btn" type="button" id="copy-email">Copy email</button>
+      <span class="copy-status" id="copy-status" aria-live="polite"></span>
+    </div>
+    <nav class="next-door" aria-label="Other rooms"></nav>
+  </div>
+</article>
+
+</div>
+
+<canvas id="fx" aria-hidden="true" hidden></canvas>
+
+<script>
+(function () {
+  // ---------- Content ----------
+  // To add a link later, set `link` and `linkLabel`. To finish a white box, fill in its fields and set `image`.
+  var whiteboxes = [
+    { id: "WB-01 · Unreal Engine", title: "TESTLEVEL3", intent: "Help the player realize the city is centered around an Inner Gate by reusing the Inner Gate saving point.", flow: "To come", image: "media/testlevel3/testlevel3-cover.webp",
+      // Page at #w-testlevel3: run-through video (YouTube id) plus the isometric overview.
+      map: { slug: "testlevel3", video: "Ogoy3a9dp9g", overview: "media/testlevel3/testlevel3-cover.webp", route: {},
+        project: "AdvancedLocomotionV4", engine: "Unreal Engine", status: "Blockout",
+        about: "A large blockout level built in Unreal Engine. The run-through below plays the level from start to finish." } },
+    { id: "WB-02 · Unreal Engine 5.6", title: "No Way Out", intent: "Block out a dungeon that traps the player in a self-circulating path.", 
+      flow: "A small three-floor level. Stairs lead up, drops from the mid levels lead back down, and the only way to the end is a hidden drop from the top mid level to floor 1.",
+      image: "media/newlevel/no-way-out-cover.webp",
+      // Page at #w-newlevel. The clay-capture map (levelMap) is kept but hidden; set showCapture: true to bring it back.
+      map: {
+        slug: "newlevel", video: "lEk6yEv8oY4", showCapture: false,
+        // Isometric circulation diagram exported from SketchUp (1400x2362). The first view is shown by default.
+        plan: [
+          { label: "All routes", src: "media/newlevel/newlevel-isometric-all-routes.webp" },
+          { label: "Main route", src: "media/newlevel/newlevel-isometric-main-route.webp" },
+          { label: "Hidden route", src: "media/newlevel/newlevel-isometric-hidden-route.webp" }
+        ],
+        project: "GameAnimationSample3", engine: "Unreal Engine 5.6", status: "Blockout",
+        about: "A three-story blockout built in Unreal Engine 5.6. The player climbs by stairs and comes back down by dropping off the mid levels, and one easy-to-miss drop links all three floors.",
+        center: [-7102.5, 6605, 5150.21],
+        views: {
+          iso: { label: "2.5D", pitch: -35, yaw: 45, ortho: 71091.03, crop: [2430, 1020, 910, 620], src: "media/newlevel/newlevel-iso.webp" },
+          top: { label: "Top", pitch: -90, yaw: 0, ortho: 58977.33, crop: [1900, 1440, 1400, 720], src: "media/newlevel/newlevel-top.webp" }
+        },
+        actors: [
+          ["start", "Player start", -20683, 22270, 1392],
+          ["item", "Collectible", -22300, 22160, 1190], ["item", "Collectible", -19380, 17780, 120], ["item", "Collectible", -16880, 17990, -290],
+          ["torch", "Torch", -19210, 18780, 160], ["torch", "Torch", -18940, 18780, 160], ["torch", "Torch", -18660, 18780, 160],
+          ["npc", "Character", -19000, 17620, 0], ["npc", "Character", -17870, 18030, -40], ["npc", "Character", -19170, 15330, 0],
+          ["npc", "Character", -18060, 19930, 1880], ["npc", "Character", -18380, 19900, 1880], ["npc", "Character", -18220, 19640, 1880],
+          ["npc", "Character", -21220, 20570, 900], ["npc", "Character", -21520, 20510, 900], ["npc", "Character", -21412, 20000, 900], ["npc", "Character", -21510, 19710, 900],
+          ["npc", "Character", -21359, 19275, 900], ["npc", "Character", -21470, 19560, 900], ["npc", "Character", -21202, 19820, 900],
+          ["bp", "Blueprint · cylinder", -17802, 14188, 108], ["bp", "Blueprint · boolean", -18750, 17920, 250]
+        ],
+        // Route layers, filled in once the route is marked. Lines are lists of world points [x, y, z] in cm.
+        route: { main: [], shortcuts: [], deadEnds: [], checkpoints: [], areas: [] }
+      } }
+  ];
+
+  var projects = [
+    { title: "Crease", date: "2026.08 to now", kind: "USC Advanced Games Project · Third-person narrative",
+      desc: "The story of an immigrant girl, told through folding paper and flying paper planes.",
+      role: "Lighting Designer, Set Dressing", roles: ["Lighting", "Art"], status: "In development",
+      link: null, pending: "Overview coming soon", seed: 2 },
+    { title: "The Unrealtor", date: "2026.01 to 2026.06", kind: "USC Advanced Games Project · Homestyle Interactive · Unity · 2-player couch co-op puzzle",
+      desc: "Two future roommates on a house tour that turns into a maze of impossible architecture. Players match split objects across a shared splitscreen to solve perspective puzzles, and each solution reshapes the house. Released free on Steam on June 20, 2026, published by USC Games.",
+      status: "Released on Steam",
+      image: "media/unrealtor-card.jpg",
+      role: "Lighting Designer, Cutscene Animator", roles: ["Lighting", "Cinematics"],
+      link: "https://store.steampowered.com/app/4420050/The_Unrealtor/", linkLabel: "Steam", seed: 4,
+      // Project page. Images live in media/ next to index.html.
+      page: {
+        slug: "unrealtor",
+        keyArt: { src: "media/unrealtor-key-art.webp", alt: "The Unrealtor key art: Maya hangs upside down on a staircase while Noah climbs toward a lit doorway" },
+        about: "You and a friend play Maya and Noah, two future roommates stuck on a house tour that becomes a shifting maze of impossible architecture. Each player sees half of the world on a shared splitscreen, and puzzles are solved by finding split objects that line up across both views. Every solved puzzle reshapes the house: rooms open, physics bends and the challenges get stranger, while the house slowly reveals its past and maybe a way out.",
+        facts: [["Developer", "Homestyle Interactive"], ["Publisher", "USC Games"], ["Released", "June 20, 2026 · Free"], ["Engine", "Unity"], ["Players", "1 to 2 · local splitscreen co-op"], ["Platforms", "Windows, macOS"], ["My role", "Lighting Designer, Cutscene Animator"]],
+        myWork: null,
+        myWorkPending: "Lighting and cutscene breakdowns coming soon.",
+        // Frames from the USC Expo video loop, one per room.
+        gallery: [
+          { src: "media/unrealtor-room-2.jpg", alt: "The Unrealtor: a playroom with a tricycle, toys and furniture floating at impossible angles" },
+          { src: "media/unrealtor-room-1.jpg", alt: "The Unrealtor: a dark loft lit by neon strips, with stairs and furniture folding into each other" },
+          { src: "media/unrealtor-room-3.jpg", alt: "The Unrealtor: a bright blue bathroom and garden built upside down and sideways" }
+        ],
+        links: [["Steam page", "https://store.steampowered.com/app/4420050/The_Unrealtor/"], ["Instagram", "https://www.instagram.com/unrealtorgame"]]
+      } },
+    { title: "Two of a Kind", date: "2025.09 to 2026.01", kind: "Team of 2 · Unity · 2D top-down co-op action",
+      desc: "Two players act as infiltrating cyborg ninjas. Focused on puzzle and enemy design.",
+      role: "Level Design, Engineering, 2D Art", roles: ["Level Design", "Engineering", "Art"], length: "20 min",
+      status: "Coming soon to Steam",
+      image: "media/two-of-a-kind-title.jpg",
+      link: "https://store.steampowered.com/app/4286840/Two_of_A_Kind/", linkLabel: "Steam", seed: 3,
+      page: {
+        slug: "two-of-a-kind",
+        keyArt: { src: "media/two-of-a-kind-title.jpg", wide: true, alt: "Two of a Kind title art: the neon pixel-art logo surrounded by a sword-wielding ninja, a gunner and bug-like enemy bots on a dark grid" },
+        about: "Two players share a split screen as infiltrating cyborg ninjas, one with a sword and one with a gun. Their abilities combine to solve puzzles and beat bosses inside a cyborg system, like the sword deflecting the gun's bullets. Three levels, each with a boss, in pixel art with an 8-bit soundtrack.",
+        facts: [["Developer", "TeamTrouble"], ["Team", "2 people"], ["Released", "Coming soon on Steam · Free to play"], ["Engine", "Unity"], ["Players", "2 · local split-screen co-op"], ["Genre", "2D top-down action puzzle"], ["My role", "Level Design, Engineering, 2D Art"]],
+        myWorkPending: "Puzzle and enemy design breakdown coming soon.",
+        gallery: [],
+        links: [["Steam page", "https://store.steampowered.com/app/4286840/Two_of_A_Kind/"]]
+      } },
+    { title: "Security Check", date: "2025.10", kind: "Ludum Dare 58 · Team of 5 · Unity · Puzzle",
+      desc: "You play an airport security officer invading travelers' privacy, and the story reveals both their lives and your moral descent.",
+      role: "2D Art", roles: ["Art"], length: "5 min",
+      image: "media/security-check-title.jpg",
+      link: "https://ldjam.com/events/ludum-dare/58/$420954", linkLabel: "Ludum Dare page", seed: 6,
+      page: {
+        slug: "security-check",
+        keyArt: { src: "media/security-check-title.jpg", wide: true, alt: "Security Check title art: gloved hands with gold rings and a watch reach into an airport security tray holding a camera, a pink bra, a stack of cash and a striped tie, with the title in yellow brush lettering" },
+        about: "You play an airport security officer who invades travelers' privacy. Bag by bag, the story reveals both their lives and your own moral descent. Made in a team of 5 for Ludum Dare 58.",
+        facts: [["Event", "Ludum Dare 58"], ["Team", "5 people"], ["Engine", "Unity"], ["Genre", "Puzzle"], ["Playtime", "5 minutes"], ["My role", "2D Art"]],
+        myWorkPending: "Art breakdown coming soon.",
+        gallery: [],
+        links: [["Ludum Dare page", "https://ldjam.com/events/ludum-dare/58/$420954"]]
+      } },
+    { title: "Birthday Wish", date: "2025.06 to 2025.09", kind: "Solo · Unity · 3D narrative adventure",
+      desc: "A warm family home seen from the view of a child who has been mysteriously shrunk.",
+      role: "Level Design, Engineering", roles: ["Level Design", "Engineering"], length: "5 to 10 min",
+      image: "media/birthday-wish-bear.jpg",
+      link: "https://youtu.be/R7BWjoRRgmA", linkLabel: "Demo video", seed: 5,
+      page: {
+        slug: "birthday-wish",
+        keyArt: { src: "media/birthday-wish-bear.jpg", wide: true, alt: "Birthday Wish: a giant teddy bear sits on a sofa under a red wall clock, seen from the eye level of a shrunken child" },
+        about: "A warm family home seen from the view of a child who has been mysteriously shrunk. A solo project made in Unity.",
+        facts: [["Team", "Solo"], ["Engine", "Unity"], ["Genre", "3D narrative adventure"], ["Playtime", "5 to 10 minutes"], ["My role", "Level Design, Engineering"]],
+        myWorkPending: "Level design breakdown coming soon.",
+        video: "R7BWjoRRgmA",
+        gallery: [
+          { src: "media/birthday-wish-1.jpg", alt: "Birthday Wish: the open living and dining room from floor level, with a tipped-over chair and a huge wooden stool in the foreground" },
+          { src: "media/birthday-wish-2.jpg", alt: "Birthday Wish: a brick fireplace room lit by a hanging globe lamp, with steps up to the next room" }
+        ],
+        links: [["Demo video on YouTube", "https://youtu.be/R7BWjoRRgmA"]]
+      } },
+    { title: "Silver Stealer", date: "2025.03 to 2025.05", kind: "Team of 4 · Two-player tabletop game · 20 min · Ages 8+",
+      desc: "Two rival robbers sneak into Mulberry Mansion while the owners are away. Memorize where the treasure is hidden, spend action points to move and grab it, and leave with the most valuable stash.",
+      role: "Producer", roles: ["Production"], status: "Tabletop",
+      image: "media/silver-stealer-board.jpg",
+      link: null, seed: 7,
+      page: {
+        slug: "silver-stealer",
+        keyArt: { src: "media/silver-stealer-board.jpg", wide: true, alt: "Silver Stealer game board: a top-down plan of Mulberry Mansion on a grid, with yellow treasure slots in each room and blue dashed secret passages",
+          caption: "The Mulberry Mansion board. Yellow squares are treasure slots, blue dashed paths are secret passages, and thick lines are walls you can only pass through doors." },
+        about: "The owners of Mulberry Mansion are gone for the weekend, and two rival robbers have the same idea. Each player hunts for gems hidden around the house while dodging its security system and trying to outplay the other robber. The winner is whoever escapes with the most valuable stash.",
+        facts: [["Team", "4 people · class project"], ["Players", "2"], ["Playtime", "20 minutes"], ["Ages", "8+"], ["Components", "Board, 16 treasure items, 22 chance cards, black market sheet, 2 meeples, 1-minute timer, die"], ["My role", "Producer"]],
+        myWorkPending: "Production notes coming soon.",
+        gallery: [
+          { src: "media/silver-stealer-rulebook-v2.jpg", alt: "Silver Stealer rulebook: components, setup, memorization, the heist, black market reveal and the end", full: true, caption: "How it plays" }
+        ],
+        links: [["Open rulebook full size", "media/silver-stealer-rulebook-v2.jpg"]]
+      } },
+    { title: "Homo Bulla", date: "2025.01", kind: "Global Game Jam · Team of 7 · Unity · 2D platform action",
+      desc: "A child blows a bubble through a city. Focused on level design and environmental storytelling.",
+      role: "Level Design, Engineering", roles: ["Level Design", "Engineering"], length: "15 min",
+      image: "media/homo-bulla-title.jpg",
+      link: "https://youtu.be/Up05R7JOdys", linkLabel: "Demo video", seed: 8,
+      page: {
+        slug: "homo-bulla",
+        keyArt: { src: "media/homo-bulla-title.jpg", wide: true, alt: "Homo Bulla title screen: an iridescent soap bubble with a skull drawn inside, beside the game's title and Start and Exit buttons on a dark navy background" },
+        about: "A child blows a bubble through a city. Made in a team of 7 at Global Game Jam 2025, the game focuses on level design and environmental storytelling.",
+        facts: [["Event", "Global Game Jam 2025"], ["Team", "7 people"], ["Engine", "Unity"], ["Genre", "2D platform action"], ["Playtime", "15 minutes"], ["My role", "Level Design, Engineering"]],
+        myWorkPending: "Level design breakdown coming soon.",
+        video: "Up05R7JOdys",
+        gallery: [],
+        links: [["Demo video on YouTube", "https://youtu.be/Up05R7JOdys"]]
+      } }
+  ];
+
+  // ---------- Floor plan geometry ----------
+  // Two layouts: landscape for wide screens, portrait for phones. Each room has a center and a point in the hallway outside its door.
+  var ROOMS = [
+    { id: "about", code: "R-01", name: "Spawn", meta: "About me", hint: "<b>Spawn</b> · who I am and what I play" },
+    { id: "level-design", code: "R-02", name: "Level Design", meta: "2 white boxes · in progress", metaShort: "2 white boxes", hint: "<b>Level Design</b> · my white box levels" },
+    { id: "projects", code: "R-03", name: "Projects", meta: "7 games · 2025 to now", metaShort: "7 games", hint: "<b>Projects</b> · every game I've worked on" },
+    { id: "experience", code: "R-04", name: "Experience", meta: "Shanda Games intern", hint: "<b>Experience</b> · studio internship, events and tools" },
+    { id: "contact", code: "R-05", name: "Contact", meta: "Exit · objective", hint: "<b>Contact</b> · how to reach me" }
+  ];
+  var LAYOUTS = {
+    wide: {
+      vb: [0, 0, 820, 480],
+      hall: { x: 180, y: 235, w: 600, h: 50 },
+      rooms: {
+        "about":        { x: 30,  y: 160, w: 150, h: 200, c: [105, 260], h2: [210, 260], door: [180, 248, 180, 272] },
+        "level-design": { x: 230, y: 30,  w: 290, h: 205, c: [375, 150], h2: [375, 260], door: [360, 235, 390, 235] },
+        "projects":     { x: 230, y: 285, w: 290, h: 165, c: [375, 380], h2: [375, 260], door: [360, 285, 390, 285] },
+        "experience":   { x: 560, y: 30,  w: 220, h: 205, c: [670, 150], h2: [670, 260], door: [655, 235, 685, 235] },
+        "contact":      { x: 560, y: 285, w: 220, h: 165, c: [670, 380], h2: [670, 260], door: [655, 285, 685, 285] }
+      },
+      scale: [30, 455]
+    },
+    tall: {
+      vb: [0, 0, 400, 760],
+      hall: { x: 170, y: 150, w: 60, h: 590 },
+      rooms: {
+        "about":        { x: 100, y: 20,  w: 200, h: 130, c: [200, 95],  h2: [200, 175], door: [185, 150, 215, 150] },
+        "level-design": { x: 10,  y: 170, w: 160, h: 290, c: [90, 330],  h2: [200, 330], door: [170, 315, 170, 345] },
+        "projects":     { x: 230, y: 170, w: 160, h: 290, c: [310, 330], h2: [200, 330], door: [230, 315, 230, 345] },
+        "experience":   { x: 10,  y: 480, w: 160, h: 240, c: [90, 610],  h2: [200, 610], door: [170, 595, 170, 625] },
+        "contact":      { x: 230, y: 480, w: 160, h: 240, c: [310, 610], h2: [200, 610], door: [230, 595, 230, 625] }
+      },
+      scale: null
+    }
+  };
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Phones and tablets: no hover, a finger instead of a mouse. Swap the "click/hover" wording for "tap".
+  var TOUCH = !!(window.matchMedia && window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+  if (TOUCH) {
+    document.documentElement.classList.add("touch");
+    document.querySelectorAll("[data-touch]").forEach(function (el) {
+      var t = el.getAttribute("data-touch");
+      if (el.id === "tb-hint") el.innerHTML = t; else el.textContent = t;
+    });
+    var bd = document.getElementById("badge");
+    if (bd) bd.setAttribute("aria-label", "Work ID badge, Game Designer. Drag it to the reader to enter, or double-tap it to flip it over.");
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function rng(seed) { var s = seed * 9301 + 49297; return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+
+  // Props inside each room hint at what's in it.
+  function props(id, r, tall) {
+    var out = "", px = r.x + 16, py = r.y + r.h - 16;
+    if (id === "level-design") {
+      var n = 3, gap = 8, size = Math.min(26, (r.w - 32 - gap * (n - 1)) / n);
+      if (tall) { size = 24; }
+      for (var i = 0; i < n; i++) {
+        var cls = i < 3 ? "prop wip" : "prop solid";
+        var x = tall ? r.x + 16 + (i % 3) * (size + gap) : px + i * (size + gap);
+        var y = tall ? py - size - Math.floor(i / 3) * (size + gap) : py - size;
+        out += '<rect class="' + cls + '" x="' + x + '" y="' + y + '" width="' + size + '" height="' + size + '"/>';
+      }
+    } else if (id === "projects") {
+      for (var j = 0; j < 7; j++) {
+        var cx = tall ? r.x + 28 + (j % 3) * 40 : px + 12 + j * 36, cy = tall ? py - 12 - Math.floor(j / 3) * 34 : py - 12;
+        out += '<circle class="prop" cx="' + cx + '" cy="' + cy + '" r="11"/>';
+      }
+    } else if (id === "experience") {
+      out += '<rect class="prop" x="' + px + '" y="' + (py - 34) + '" width="90" height="34"/><circle class="prop" cx="' + (px + 45) + '" cy="' + (py - 50) + '" r="9"/>';
+    } else if (id === "contact") {
+      var gx = r.x + r.w - 40, gy = r.y + r.h - 40;
+      out += '<path class="prop goal" d="M' + gx + " " + (gy - 16) + " L" + (gx + 16) + " " + gy + " L" + gx + " " + (gy + 16) + " L" + (gx - 16) + " " + gy + 'Z"/>';
+    } else if (id === "about") {
+      out += '<circle class="prop" cx="' + (r.x + r.w / 2) + '" cy="' + (r.y + r.h - 34) + '" r="14" stroke-dasharray="3 3"/>';
+    }
+    return out;
+  }
+
+  var layoutKey = null, L = null;
+  var plan = document.getElementById("plan");
+  var player, cone, trail;
+  var pos = null, heading = 0, here = "about", anim = null, busy = false;
+
+  function drawPlan() {
+    var key = window.innerWidth / Math.max(1, window.innerHeight) < 0.85 ? "tall" : "wide";
+    if (key === layoutKey) return;
+    layoutKey = key; L = LAYOUTS[key];
+    var tall = key === "tall", vb = L.vb, s = "";
+    s += '<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--muted)" stroke-width="1.5"/></pattern></defs>';
+    var h = L.hall;
+    s += '<rect class="hall" x="' + h.x + '" y="' + h.y + '" width="' + h.w + '" height="' + h.h + '"/>';
+    s += tall
+      ? '<text class="hall-label" x="' + (h.x + h.w / 2) + '" y="' + (h.y + h.h - 14) + '" text-anchor="middle">HALL</text>'
+      : '<text class="hall-label" x="' + (h.x + h.w - 12) + '" y="' + (h.y + h.h / 2 + 4) + '" text-anchor="end">HALL</text>';
+    ROOMS.forEach(function (room) {
+      var r = L.rooms[room.id], tx = r.x + 16;
+      var nameSize = tall && room.id !== "about" ? ' style="font-size:21px"' : "";
+      var nm = room.name === "Level Design" && tall ? '<tspan x="' + tx + '" dy="0">Level</tspan><tspan x="' + tx + '" dy="22">Design</tspan>' : esc(room.name);
+      var metaDy = room.name === "Level Design" && tall ? 22 : 0;
+      s += '<g class="room" data-room="' + room.id + '" tabindex="0" role="link" aria-label="' + esc(room.name + ". " + room.meta) + '">' +
+        '<rect class="floor" x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h + '"/>' +
+        '<text class="r-code" x="' + tx + '" y="' + (r.y + 24) + '">' + room.code + "</text>" +
+        '<text class="r-name" x="' + tx + '" y="' + (r.y + 52) + '"' + nameSize + ">" + nm + "</text>" +
+        '<text class="r-meta" x="' + tx + '" y="' + (r.y + 70 + metaDy) + '">' + esc(tall && room.metaShort ? room.metaShort : room.meta) + "</text>" +
+        '<text class="r-enter" x="' + tx + '" y="' + (r.y + 88 + metaDy) + '">ENTER →</text>' +
+        props(room.id, r, tall) + "</g>";
+    });
+    ROOMS.forEach(function (room) {
+      var d = L.rooms[room.id].door;
+      s += '<line class="door" x1="' + d[0] + '" y1="' + d[1] + '" x2="' + d[2] + '" y2="' + d[3] + '"/>';
+    });
+    s += '<text class="label-small" x="' + (L.rooms.about.x + 10) + '" y="' + (L.rooms.about.y + L.rooms.about.h - 10) + '">PLAYER_START</text>';
+    if (L.scale) {
+      var sx = L.scale[0], sy = L.scale[1];
+      s += '<line class="scalebar" x1="' + sx + '" y1="' + sy + '" x2="' + (sx + 100) + '" y2="' + sy + '"/><line class="scalebar" x1="' + sx + '" y1="' + (sy - 6) + '" x2="' + sx + '" y2="' + (sy + 6) + '"/><line class="scalebar" x1="' + (sx + 100) + '" y1="' + (sy - 6) + '" x2="' + (sx + 100) + '" y2="' + (sy + 6) + '"/><text class="label-small" x="' + sx + '" y="' + (sy - 10) + '">10 m</text>';
+    }
+    s += '<polyline id="trail" class="path" points=""/>';
+    s += '<g id="player"><path class="player-cone" id="cone" d="M0 0 L46 -18 A48 48 0 0 1 46 18 Z"/><circle class="player-dot" r="8"/></g>';
+    plan.setAttribute("viewBox", vb.join(" "));
+    plan.innerHTML = s;
+    player = document.getElementById("player"); cone = document.getElementById("cone"); trail = document.getElementById("trail");
+    pos = L.rooms[here].c.slice();
+    place(pos[0], pos[1], heading);
+    plan.querySelectorAll(".room").forEach(function (g) {
+      var id = g.getAttribute("data-room");
+      g.addEventListener("click", function () { enter(id); });
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter(id); } });
+      g.addEventListener("mouseenter", function () { hint(id); });
+      g.addEventListener("focus", function () { hint(id); });
+    });
+  }
+  function hint(id) {
+    var room = ROOMS.filter(function (r) { return r.id === id; })[0];
+    document.getElementById("tb-hint").innerHTML = room.hint;
+  }
+  function place(x, y, a) {
+    player.setAttribute("transform", "translate(" + x.toFixed(1) + " " + y.toFixed(1) + ")");
+    cone.setAttribute("transform", "rotate(" + a.toFixed(1) + ")");
+  }
+  function setViewBox(v) { plan.setAttribute("viewBox", v.map(function (n) { return n.toFixed(1); }).join(" ")); }
+  function roomBox(id) {
+    var r = L.rooms[id], pad = 12;
+    return [r.x - pad, r.y - pad, r.w + pad * 2, r.h + pad * 2];
+  }
+  function tween(from, to, ms, done) {
+    var t0 = null;
+    function f(ts) {
+      if (t0 == null) t0 = ts;
+      var k = Math.min(1, (ts - t0) / ms), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      setViewBox(from.map(function (a, i) { return a + (to[i] - a) * e; }));
+      if (k < 1) anim = requestAnimationFrame(f); else if (done) done();
+    }
+    anim = requestAnimationFrame(f);
+  }
+
+  // Walk from the current room to the target through the hall, zoom into the room, then open its page.
+  function enter(id) {
+    if (busy) return;
+    var a = L.rooms[here], b = L.rooms[id];
+    var pts = here === id ? [pos, b.c] : [pos, a.h2, b.h2, b.c];
+    plan.querySelectorAll(".room").forEach(function (g) { g.classList.toggle("is-active", g.getAttribute("data-room") === id); });
+    if (reduce) { here = id; pos = b.c.slice(); place(pos[0], pos[1], heading); location.hash = id; return; }
+    busy = true;
+    trail.setAttribute("points", pts.map(function (p) { return p.join(","); }).join(" "));
+    var seg = 0, t0 = null, speed = 0.6;
+    function step(ts) {
+      if (seg >= pts.length - 1) {
+        here = id; pos = b.c.slice(); busy = false;
+        var box = player.getBoundingClientRect();
+        go(id, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
+        return;
+      }
+      var p = pts[seg], q = pts[seg + 1], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (len < 1) { seg++; anim = requestAnimationFrame(step); return; }
+      if (t0 == null) t0 = ts;
+      var k = Math.min(1, (ts - t0) * speed / len);
+      heading = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+      place(p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, heading);
+      if (k >= 1) { seg++; t0 = null; }
+      anim = requestAnimationFrame(step);
+    }
+    anim = requestAnimationFrame(step);
+  }
+
+  // ---------- Router ----------
+  var home = document.getElementById("home");
+  var views = document.querySelectorAll(".roomview");
+  var lastRoom = null;
+  function route() {
+    var id = location.hash.replace("#", "");
+    var valid = ROOMS.some(function (r) { return r.id === id; });
+    if (anim) cancelAnimationFrame(anim);
+    busy = false;
+    var isProject = id.indexOf("p-") === 0 && projects.some(function (p) { return p.page && p.page.slug === id.slice(2); });
+    var wb = id.indexOf("w-") === 0 ? whiteboxes.filter(function (w) { return w.map && w.map.slug === id.slice(2); })[0] : null;
+    if (!valid && id !== "map" && !isProject && !wb) {
+      views.forEach(function (v) { v.hidden = true; });
+      home.hidden = true;
+      showTitle(true);
+      document.title = "Mingqian Dong Portfolio";
+      window.scrollTo(0, 0);
+      return;
+    }
+    showTitle(false);
+    if (wb) {
+      home.hidden = true;
+      views.forEach(function (v) { v.hidden = v.id !== "room-whitebox"; });
+      renderLevelMapPage(wb);
+      var wv = document.getElementById("room-whitebox");
+      wv.classList.remove("fade-in"); void wv.offsetWidth; wv.classList.add("fade-in");
+      lastRoom = "level-design"; here = "level-design";
+      document.title = wb.title + " · Mingqian Dong";
+      window.scrollTo(0, 0);
+      return;
+    }
+    var proj = id.indexOf("p-") === 0 ? projects.filter(function (p) { return p.page && p.page.slug === id.slice(2); })[0] : null;
+    if (proj) {
+      home.hidden = true;
+      views.forEach(function (v) { v.hidden = v.id !== "room-project"; });
+      renderProjectPage(proj);
+      var pv = document.getElementById("room-project");
+      pv.classList.remove("fade-in"); void pv.offsetWidth; pv.classList.add("fade-in");
+      lastRoom = "projects"; here = "projects";
+      document.title = proj.title + " · Mingqian Dong";
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (!valid) {
+      views.forEach(function (v) { v.hidden = true; });
+      home.hidden = false;
+      document.title = "Floor plan · Mingqian Dong";
+      if (lastRoom) {
+        here = lastRoom; pos = L.rooms[here].c.slice(); place(pos[0], pos[1], heading);
+        trail.setAttribute("points", "");
+        plan.querySelectorAll(".room").forEach(function (g) { g.classList.toggle("is-active", g.getAttribute("data-room") === here); });
+        if (reduce) setViewBox(L.vb); else { setViewBox(roomBox(here)); tween(roomBox(here), L.vb, 420); }
+        var focusRoom = plan.querySelector('.room[data-room="' + here + '"]');
+        if (focusRoom) focusRoom.focus({ preventScroll: true });
+      } else setViewBox(L.vb);
+      window.scrollTo(0, 0);
+      return;
+    }
+    home.hidden = true;
+    views.forEach(function (v) {
+      var on = v.getAttribute("data-room") === id;
+      v.hidden = !on;
+      if (on) { v.classList.remove("fade-in"); void v.offsetWidth; v.classList.add("fade-in"); }
+    });
+    lastRoom = id; here = id;
+    var room = ROOMS.filter(function (r) { return r.id === id; })[0];
+    document.title = room.name === "Spawn" ? "About · Mingqian Dong" : room.name + " · Mingqian Dong";
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Room page chrome: minimap and next-door links ----------
+  function minimap(current) {
+    var g = LAYOUTS.wide, h = g.hall, s = '<svg viewBox="' + g.vb.join(" ") + '" aria-hidden="true">';
+    s += '<rect class="mm-hall" x="' + h.x + '" y="' + h.y + '" width="' + h.w + '" height="' + h.h + '"/>';
+    ROOMS.forEach(function (room) {
+      var r = g.rooms[room.id];
+      s += '<rect class="mm-room' + (room.id === current ? " is-here" : "") + '" data-go="' + room.id + '" x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h + '"><title>' + esc(room.name) + "</title></rect>";
+    });
+    return s + "</svg>";
+  }
+  views.forEach(function (v) {
+    if (v.id === "room-project" || v.id === "room-whitebox") {
+      var pm = v.querySelector(".minimap"), inLd = v.id === "room-whitebox";
+      pm.innerHTML = '<div class="minimap-label">You are in<b>' + (inLd ? "R-02 Level Design" : "R-03 Projects") + "</b></div>" + minimap(inLd ? "level-design" : "projects");
+      pm.querySelectorAll("[data-go]").forEach(function (r) { r.addEventListener("click", function (e) { go(r.getAttribute("data-go"), { x: e.clientX, y: e.clientY }); }); });
+      return;
+    }
+    var id = v.getAttribute("data-room"), idx = ROOMS.map(function (r) { return r.id; }).indexOf(id);
+    var room = ROOMS[idx];
+    var mm = v.querySelector(".minimap");
+    mm.innerHTML = '<div class="minimap-label">You are in<b>' + esc(room.code + " " + (room.id === "about" ? "About me" : room.name)) + "</b></div>" + minimap(id);
+    mm.querySelectorAll("[data-go]").forEach(function (r) { r.addEventListener("click", function (e) { go(r.getAttribute("data-go"), { x: e.clientX, y: e.clientY }); }); });
+    var prev = ROOMS[(idx - 1 + ROOMS.length) % ROOMS.length], next = ROOMS[(idx + 1) % ROOMS.length];
+    function label(r) { return r.id === "about" ? "About me" : r.name; }
+    v.querySelector(".next-door").innerHTML =
+      '<a href="#' + prev.id + '">← ' + prev.code + " <b>" + esc(label(prev)) + "</b></a>" +
+      '<a href="#' + next.id + '">' + next.code + " <b>" + esc(label(next)) + "</b> →</a>";
+  });
+
+  // ---------- Room content ----------
+  // A small procedural top-down blockout for each project, so every card has a map before screenshots exist.
+  function blockout(seed, w, h, dashed) {
+    var r = rng(seed), rooms = [], cols = 4, rows = 2, cw = w / cols, ch = h / rows;
+    for (var i = 0; i < cols; i++) for (var j = 0; j < rows; j++) {
+      if (r() < 0.3) continue;
+      var rw = cw * (0.5 + r() * 0.35), rh = ch * (0.5 + r() * 0.35);
+      rooms.push({ x: i * cw + (cw - rw) / 2, y: j * ch + (ch - rh) / 2, w: rw, h: rh });
+    }
+    var dash = dashed ? ' stroke-dasharray="4 4"' : "";
+    var out = '<svg viewBox="0 0 ' + w + " " + h + '" preserveAspectRatio="xMidYMid slice" aria-hidden="true">';
+    out += '<rect width="' + w + '" height="' + h + '" fill="var(--surface)"/>';
+    var pts = rooms.map(function (o) { return (o.x + o.w / 2).toFixed(1) + "," + (o.y + o.h / 2).toFixed(1); }).join(" ");
+    rooms.forEach(function (o) {
+      out += '<rect x="' + o.x.toFixed(1) + '" y="' + o.y.toFixed(1) + '" width="' + o.w.toFixed(1) + '" height="' + o.h.toFixed(1) + '" fill="var(--bg)" stroke="var(--muted)" stroke-width="1.5"' + dash + "/>";
+    });
+    if (rooms.length > 1) out += '<polyline points="' + pts + '" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 4"/>';
+    if (rooms.length) { var f = rooms[0]; out += '<circle cx="' + (f.x + f.w / 2).toFixed(1) + '" cy="' + (f.y + f.h / 2).toFixed(1) + '" r="4" fill="var(--accent)"/>'; }
+    return out + "</svg>";
+  }
+  function action(p) {
+    if (!p.link && !p.pending) return "";
+    if (p.link) return '<a class="btn" href="' + esc(p.link) + '" target="_blank" rel="noopener">' + esc(p.linkLabel) + " ↗</a>";
+    return '<span class="btn pending">' + esc(p.pending) + "</span>";
+  }
+  function el(tag, attrs, html) {
+    var n = document.createElement(tag);
+    for (var k in attrs || {}) n.setAttribute(k, attrs[k]);
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+
+  var wbGrid = document.getElementById("wb-grid");
+  whiteboxes.forEach(function (w) {
+    var href = w.map ? "#w-" + w.map.slug : null;
+    var shot = w.image ? '<img src="' + esc(w.image) + '" alt="' + esc(w.title) + ': isometric view of the whole blockout level">' : "Screenshot to come";
+    if (w.image && href) shot = '<a href="' + href + '" aria-label="Open the ' + esc(w.title) + ' map">' + shot + "</a>";
+    wbGrid.appendChild(el("article", { class: "wb" },
+      '<div class="wb-shot' + (w.image ? " has-img" : "") + '">' + shot + "</div>" +
+      '<div class="wb-body"><span class="wb-id">' + esc(w.id) + "</span><h3>" + esc(w.title) + "</h3>" +
+      '<dl class="wb-fields"><dt>Intent</dt><dd>' + esc(w.intent) + "</dd><dt>Flow</dt><dd>" + esc(w.flow) + "</dd></dl>" + (href ? '<a class="btn wb-open" href="' + href + '">Open level</a>' : "") + "</div>"));
+  });
+
+  document.getElementById("honeymoon-thumb").innerHTML = blockout(11, 160, 120, true);
+
+  var grid = document.getElementById("proj-grid");
+  var filtersEl = document.getElementById("filters");
+  var roleOrder = ["All", "Level Design", "Lighting", "Engineering", "Art", "Cinematics", "Production"];
+  var current = "All";
+  try { var saved = localStorage.getItem("md-filter"); if (saved && roleOrder.indexOf(saved) >= 0) current = saved; } catch (e) {}
+  function renderProjects() {
+    grid.innerHTML = "";
+    projects.filter(function (p) { return current === "All" || p.roles.indexOf(current) >= 0; }).forEach(function (p) {
+      var tags = p.roles.map(function (t) { return '<span class="tag' + (t === "Level Design" ? " ld" : "") + '">' + esc(t) + "</span>"; }).join("");
+      grid.appendChild(el("article", { class: "proj" },
+        (p.page ? '<a class="proj-map" href="#p-' + p.page.slug + '" aria-label="Open the ' + esc(p.title) + ' project page">' : '<div class="proj-map">') + blockout(p.seed, 320, 140, !p.link) +
+          // Store art where it can load (on the live site); the blockout stays underneath as the fallback.
+          (p.image ? '<img class="proj-img" src="' + esc(p.image) + '" alt="' + esc(p.title) + ' key art" loading="lazy" onerror="this.remove()">' : "") +
+          (p.status ? '<span class="proj-status"><span class="tag">' + esc(p.status) + "</span></span>" : "") + (p.page ? '<span class="proj-open-hint">Open project →</span></a>' : "</div>") +
+        '<div class="proj-body"><div class="proj-top"><h3>' + (p.page ? '<a href="#p-' + p.page.slug + '">' + esc(p.title) + "</a>" : esc(p.title)) + '</h3><span class="proj-date">' + esc(p.date) + "</span></div>" +
+        '<p class="proj-kind">' + esc(p.kind) + "</p>" +
+        '<p class="my-role"><span>My role</span><b>' + esc(p.role) + "</b></p>" +
+        '<p class="proj-desc">' + esc(p.desc) + "</p>" +
+        '<div class="tags">' + tags + "</div>" +
+        '<div class="proj-foot"><span class="proj-len">' + (p.length ? "Playtime " + esc(p.length) : "") + '</span><span class="proj-actions">' + (p.page ? '<a class="btn" href="#p-' + p.page.slug + '">Open project</a>' : "") + action(p) + "</span></div></div>"));
+    });
+    deckBuild();
+  }
+
+  // ---------- Project pages ----------
+  // ---------- White box level map ----------
+  var LAYERS = [
+    { key: "start", name: "Player start", group: "In the level" },
+    { key: "item", name: "Collectibles", group: "In the level" },
+    { key: "torch", name: "Torches", group: "In the level" },
+    { key: "npc", name: "Characters", group: "In the level" },
+    { key: "bp", name: "Blueprints", group: "In the level" },
+    { key: "main", name: "Main route", group: "Route", color: "#e8772e" },
+    { key: "shortcuts", name: "Shortcuts", group: "Route", color: "#e0b12a" },
+    { key: "deadEnds", name: "Dead ends", group: "Route", color: "#3b7fd9" },
+    { key: "checkpoints", name: "Checkpoints", group: "Route", color: "#d23a32" },
+    { key: "areas", name: "Areas", group: "Route" }
+  ];
+  function glyph(key, x, y, s) {
+    var f = function (n) { return n.toFixed(1); };
+    if (key === "start") return '<path d="M' + f(x) + " " + f(y) + "v" + f(-s * 2.2) + "l" + f(s * 1.6) + " " + f(s * 0.55) + "l" + f(-s * 1.6) + " " + f(s * 0.55) + '" fill="var(--accent)" stroke="var(--accent)" stroke-width="' + f(s * 0.3) + '" stroke-linejoin="round"/>';
+    if (key === "item") return '<path d="M' + f(x) + " " + f(y - s) + "l" + f(s) + " " + f(s) + "l" + f(-s) + " " + f(s) + "l" + f(-s) + " " + f(-s) + 'z" fill="#c98a14" stroke="var(--surface)" stroke-width="' + f(s * 0.25) + '"/>';
+    if (key === "torch") return '<path d="M' + f(x) + " " + f(y - s * 1.1) + "l" + f(s * 0.75) + " " + f(s * 1.6) + "h" + f(-s * 1.5) + 'z" fill="#d2552a" stroke="var(--surface)" stroke-width="' + f(s * 0.22) + '"/>';
+    if (key === "npc") return '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(s * 0.6) + '" fill="var(--surface)" stroke="var(--ink)" stroke-width="' + f(s * 0.3) + '"/>';
+    if (key === "bp") return '<rect x="' + f(x - s * 0.7) + '" y="' + f(y - s * 0.7) + '" width="' + f(s * 1.4) + '" height="' + f(s * 1.4) + '" fill="#7a5bc4" stroke="var(--surface)" stroke-width="' + f(s * 0.22) + '"/>';
+    return "";
+  }
+  function swatch(l) {
+    if (l.color && l.key === "checkpoints") return '<svg viewBox="0 0 22 16"><circle cx="11" cy="8" r="5" fill="' + l.color + '"/></svg>';
+    if (l.color) return '<svg viewBox="0 0 22 16"><path d="M1 8h20" stroke="' + l.color + '" stroke-width="3"' + (l.key === "deadEnds" ? "" : "") + '/></svg>';
+    if (l.key === "areas") return '<svg viewBox="0 0 22 16"><rect x="2" y="2" width="18" height="12" fill="none" stroke="var(--ink)" stroke-dasharray="3 2"/></svg>';
+    return '<svg viewBox="-11 -8 22 16">' + glyph(l.key, 0, l.key === "start" ? 6 : 1, 5.5) + "</svg>";
+  }
+  function levelMap(m) {
+    var root = el("div", { class: "lm" }), state = { view: "iso", on: {}, vb: null };
+    LAYERS.forEach(function (l) { state.on[l.key] = true; });
+    var stage = el("div", { class: "lm-stage" }), legend = el("div", { class: "lm-legend", role: "group", "aria-label": "Map layers" });
+    root.appendChild(stage); root.appendChild(legend);
+    function routeCount(k) { return (m.route[k] || []).length; }
+    var lastGroup = null;
+    LAYERS.forEach(function (l) {
+      var n = l.group === "Route" ? routeCount(l.key) : m.actors.filter(function (a) { return a[0] === l.key; }).length;
+      if (!n && l.group === "Route") return;
+      if (l.group !== lastGroup) { legend.appendChild(el("p", {}, esc(l.group))); lastGroup = l.group; }
+      var b = el("button", { class: "lm-layer", type: "button", "aria-pressed": "true" }, swatch(l) + "<span>" + esc(l.name) + "</span><small>" + (n ? n : "to come") + "</small>");
+      if (!n) { b.disabled = true; b.removeAttribute("aria-pressed"); }
+      b.addEventListener("click", function () { state.on[l.key] = !state.on[l.key]; b.setAttribute("aria-pressed", String(state.on[l.key])); draw(); });
+      legend.appendChild(b);
+    });
+    var tools = el("div", { class: "lm-tools" });
+    var viewBtns = el("div", { role: "group", "aria-label": "View" });
+    Object.keys(m.views).forEach(function (k) {
+      var b = el("button", { type: "button", "aria-pressed": String(k === state.view) }, esc(m.views[k].label));
+      b.addEventListener("click", function () {
+        state.view = k; state.vb = null;
+        Array.prototype.forEach.call(viewBtns.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+        draw();
+      });
+      viewBtns.appendChild(b);
+    });
+    var zoomBtns = el("div", { role: "group", "aria-label": "Zoom" },
+      '<button type="button" data-z="in" aria-label="Zoom in">+</button><button type="button" data-z="out" aria-label="Zoom out">−</button><button type="button" data-z="fit">Fit</button>');
+    tools.appendChild(viewBtns); tools.appendChild(zoomBtns);
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("role", "img");
+    var tip = el("div", { class: "lm-tip", hidden: "" });
+    stage.appendChild(tools); stage.appendChild(svg); stage.appendChild(tip);
+    stage.appendChild(el("div", { class: "lm-hint" }, "Drag to pan · hover a marker"));
+
+    function basis(v) {
+      var p = v.pitch * Math.PI / 180, y = v.yaw * Math.PI / 180;
+      return { r: [-Math.sin(y), Math.cos(y), 0], u: [-Math.sin(p) * Math.cos(y), -Math.sin(p) * Math.sin(y), Math.cos(p)] };
+    }
+    function project(P, v) {
+      var b = basis(v), d = [P[0] - m.center[0], P[1] - m.center[1], P[2] - m.center[2]], W = 3840, H = 2160;
+      var x = (d[0] * b.r[0] + d[1] * b.r[1] + d[2] * b.r[2]) / v.ortho * W + W / 2;
+      var y = -(d[0] * b.u[0] + d[1] * b.u[1] + d[2] * b.u[2]) / v.ortho * W + H / 2;
+      return [x - v.crop[0], y - v.crop[1]];
+    }
+    function draw() {
+      var v = m.views[state.view], W = v.crop[2], H = v.crop[3];
+      if (!state.vb) state.vb = [0, 0, W, H];
+      var vb = state.vb, s = 7 * vb[2] / W, f = function (n) { return n.toFixed(1); };
+      svg.setAttribute("viewBox", vb.map(f).join(" "));
+      svg.setAttribute("aria-label", m.views[state.view].label + " map of " + m.slug);
+      var out = '<image href="' + esc(v.src) + '" x="0" y="0" width="' + W + '" height="' + H + '"/>';
+      var pts = function (line) { return line.map(function (P) { return project(P, v).map(f).join(","); }).join(" "); };
+      if (state.on.areas) m.route.areas.forEach(function (a) {
+        out += '<polygon points="' + pts(a.pts) + '" fill="none" stroke="var(--ink)" stroke-width="' + f(s * 0.25) + '" stroke-dasharray="' + f(s) + " " + f(s * 0.6) + '"/>';
+        var c = project(a.pts[0], v);
+        out += '<text x="' + f(c[0]) + '" y="' + f(c[1] - s * 0.6) + '" font-family="IBM Plex Mono, monospace" font-size="' + f(s * 1.8) + '" fill="var(--ink)">' + esc(a.name) + "</text>";
+      });
+      [["deadEnds", "#3b7fd9"], ["shortcuts", "#e0b12a"], ["main", "#e8772e"]].forEach(function (r) {
+        if (state.on[r[0]]) m.route[r[0]].forEach(function (line) {
+          out += '<polyline points="' + pts(line) + '" fill="none" stroke="' + r[1] + '" stroke-width="' + f(s * (r[0] === "main" ? 0.8 : 0.55)) + '" stroke-linecap="round" stroke-linejoin="round"/>';
+        });
+      });
+      if (state.on.checkpoints) m.route.checkpoints.forEach(function (P) { var c = project(P, v); out += '<circle cx="' + f(c[0]) + '" cy="' + f(c[1]) + '" r="' + f(s * 0.8) + '" fill="#d23a32" stroke="var(--surface)" stroke-width="' + f(s * 0.2) + '"/>'; });
+      m.actors.forEach(function (a, i) {
+        if (!state.on[a[0]]) return;
+        var c = project([a[2], a[3], a[4]], v);
+        out += '<g class="lm-mk" tabindex="0" data-i="' + i + '"><circle class="lm-ring" cx="' + f(c[0]) + '" cy="' + f(c[1]) + '" r="' + f(s * 1.5) + '" fill="transparent" stroke="var(--accent)" stroke-opacity="0" stroke-width="' + f(s * 0.25) + '"/>' + glyph(a[0], c[0], a[0] === "start" ? c[1] + s * 0.5 : c[1], s) + "</g>";
+      });
+      svg.innerHTML = out;
+    }
+    function showTip(g) {
+      var a = m.actors[+g.getAttribute("data-i")], sr = stage.getBoundingClientRect(), gr = g.getBoundingClientRect();
+      tip.textContent = a[1] + " · height " + (a[4] / 100).toFixed(1) + " m";
+      tip.hidden = false;
+      var half = tip.offsetWidth / 2, x = gr.left + gr.width / 2 - sr.left;
+      tip.style.left = Math.max(half + 4, Math.min(sr.width - half - 4, x)) + "px"; tip.style.top = (gr.top - sr.top) + "px";
+    }
+    svg.addEventListener("pointerover", function (e) { var g = e.target.closest(".lm-mk"); if (g) showTip(g); });
+    svg.addEventListener("pointerout", function (e) { if (e.target.closest(".lm-mk")) tip.hidden = true; });
+    svg.addEventListener("focusin", function (e) { var g = e.target.closest(".lm-mk"); if (g) showTip(g); });
+    svg.addEventListener("focusout", function () { tip.hidden = true; });
+    function clampVb() {
+      var v = m.views[state.view], W = v.crop[2], H = v.crop[3], vb = state.vb;
+      vb[0] = Math.max(0, Math.min(W - vb[2], vb[0])); vb[1] = Math.max(0, Math.min(H - vb[3], vb[1]));
+    }
+    function zoom(k, cx, cy) {
+      var v = m.views[state.view], vb = state.vb, W = v.crop[2];
+      var nw = Math.max(W / 6, Math.min(W, vb[2] * k)), r = nw / vb[2];
+      if (cx == null) { cx = vb[0] + vb[2] / 2; cy = vb[1] + vb[3] / 2; }
+      state.vb = [cx - (cx - vb[0]) * r, cy - (cy - vb[1]) * r, nw, vb[3] * r];
+      clampVb(); draw();
+    }
+    zoomBtns.addEventListener("click", function (e) {
+      var z = e.target.getAttribute("data-z");
+      if (z === "in") zoom(0.7); else if (z === "out") zoom(1 / 0.7); else if (z === "fit") { state.vb = null; draw(); }
+    });
+    svg.addEventListener("dblclick", function (e) {
+      var r = svg.getBoundingClientRect(), vb = state.vb;
+      zoom(0.6, vb[0] + (e.clientX - r.left) / r.width * vb[2], vb[1] + (e.clientY - r.top) / r.height * vb[3]);
+    });
+    var drag = null;
+    svg.addEventListener("pointerdown", function (e) {
+      if (e.target.closest(".lm-mk")) return;
+      drag = { x: e.clientX, y: e.clientY, vb: state.vb.slice() };
+      svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
+    });
+    svg.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      var r = svg.getBoundingClientRect(), k = drag.vb[2] / r.width;
+      state.vb = [drag.vb[0] - (e.clientX - drag.x) * k, drag.vb[1] - (e.clientY - drag.y) * k, drag.vb[2], drag.vb[3]];
+      clampVb(); svg.setAttribute("viewBox", state.vb.map(function (n) { return n.toFixed(1); }).join(" "));
+    });
+    function endDrag() { if (drag) { drag = null; svg.classList.remove("dragging"); draw(); } }
+    svg.addEventListener("pointerup", endDrag); svg.addEventListener("pointercancel", endDrag);
+    draw();
+    return root;
+  }
+  function renderLevelMapPage(w) {
+    var m = w.map, v = document.getElementById("room-whitebox"), box = v.querySelector(".wbp-content");
+    var routeDone = Object.keys(m.route).some(function (k) { return m.route[k].length; });
+    box.innerHTML =
+      '<header class="room-head"><p class="eyebrow">' + esc(w.id) + '</p><h1>' + esc(w.title) + '</h1><p class="intro">' + esc(m.about) + "</p></header>";
+    if (m.showCapture) box.appendChild(levelMap(m));
+    var video = m.video ? el("div", { class: "pp-video" }, '<iframe src="https://www.youtube-nocookie.com/embed/' + esc(m.video) + '" title="' + esc(w.title) + ' run-through video" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>')
+      : el("div", { class: "pp-video pp-video-pending" }, '<span class="pp-pending">Run-through video coming soon.</span>');
+    var notes = el("div", { class: m.plan ? "nl-notes" : "pp-grid" });
+    if (m.plan) {
+      var split = el("div", { class: "nl-split" }), fig = el("figure", { class: "nl-plan" }), col = el("div", { class: "nl-col" });
+      var tabs = el("div", { class: "lm-tools nl-tabs", role: "group", "aria-label": "Route view" }, "<div></div>");
+      var img = '<a class="nl-plan-link" href="' + esc(m.plan[0].src) + '" target="_blank" rel="noopener" title="Open full size"><img src="' + esc(m.plan[0].src) + '" alt="Isometric circulation diagram of No Way Out: the three floors stacked, with climbs in blue, drops in red and the hidden drop dashed in red" width="1400" height="2362"></a>';
+      fig.innerHTML = img + "<figcaption>Isometric circulation diagram, built in SketchUp. Blue lines climb, red lines drop and the dashed red line is the hidden drop. " + (TOUCH ? "Tap" : "Click") + " to open full size.</figcaption>";
+      m.plan.forEach(function (pv, i) {
+        var b = el("button", { type: "button", "aria-pressed": String(i === 0) }, esc(pv.label));
+        b.addEventListener("click", function () {
+          fig.querySelector("img").src = pv.src; fig.querySelector("a").href = pv.src;
+          Array.prototype.forEach.call(tabs.firstChild.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+        });
+        tabs.firstChild.appendChild(b);
+      });
+      fig.insertBefore(tabs, fig.firstChild);
+      col.appendChild(el("p", { class: "subhead first" }, "Run-through"));
+      col.appendChild(video); col.appendChild(notes);
+      split.appendChild(fig); split.appendChild(col);
+      box.appendChild(split);
+    } else {
+      box.appendChild(el("p", { class: "subhead first" }, "Run-through"));
+      box.appendChild(video);
+      if (m.overview) box.appendChild(el("div", { style: "margin-bottom:2.5rem" }, '<p class="subhead">Isometric overview</p><figure class="pp-doc"><a href="' + esc(m.overview) + '" target="_blank" rel="noopener"><img src="' + esc(m.overview) + '" alt="Isometric view of the whole ' + esc(w.title) + ' blockout" loading="lazy"></a></figure>'));
+    }
+    if (!m.plan) box.appendChild(notes);
+    notes.innerHTML = (
+      '<div><p class="subhead first">Design notes</p><dl class="wb-fields"><dt>Intent</dt><dd>' + esc(w.intent) + "</dd><dt>Flow</dt><dd>" + esc(w.flow) + "</dd></dl>" +
+      (routeDone ? "" : '<p class="pp-pending" style="margin-top:1.25rem">Route, checkpoints and area breakdown coming soon.</p>') + "</div>" +
+      '<aside class="pp-side"><dl class="facts"><dt>Project</dt><dd>' + esc(m.project) + "</dd><dt>Map</dt><dd>" + esc(w.title) + "</dd><dt>Engine</dt><dd>" + esc(m.engine) + "</dd><dt>Status</dt><dd>" + esc(m.status) + "</dd></dl></aside>");
+  }
+
+  function renderProjectPage(p) {
+    var pg = p.page, v = document.getElementById("room-project"), ka = pg.keyArt;
+    var shots = pg.gallery.filter(function (g) { return !g.full; }), full = pg.gallery.filter(function (g) { return g.full; });
+    var gallery = shots.length ? '<div class="pp-gallery' + (shots.length < 3 ? " pp-gallery-few" : "") + '">' + shots.map(function (g, i) {
+      return '<figure class="pp-shot' + (i === 0 && shots.length > 2 ? " pp-shot-main" : "") + '">' + blockout(p.seed + i, 320, 180, false) +
+        '<img src="' + esc(g.src) + '" alt="' + esc(g.alt) + '" loading="lazy" onerror="this.remove()"></figure>';
+    }).join("") + "</div>" : "";
+    var docs = full.map(function (g) {
+      return '<p class="subhead">' + esc(g.caption || "Document") + '</p><figure class="pp-doc"><a href="' + esc(g.src) + '" target="_blank" rel="noopener"><img src="' + esc(g.src) + '" alt="' + esc(g.alt) + '" loading="lazy"></a></figure>';
+    }).join("");
+    var tags = p.roles.map(function (t) { return '<span class="tag">' + esc(t) + "</span>"; }).join("");
+    var head = '<header class="room-head"><p class="eyebrow">R-03 · Gallery · ' + esc(p.date) + "</p><h1>" + esc(p.title) + '</h1><p class="intro">' + esc(p.kind) + "</p>" + '<p class="my-role"><span>My role</span><b>' + esc(p.role) + "</b></p>" +
+      (ka ? '<p class="pp-tagline">' + esc(pg.about.split(". ")[0]) + ".</p>" : "") + "</header>";
+    var hero = !ka ? head
+      : ka.wide ? head + '<figure class="pp-hero-wide' + (ka.pixel ? " pixel" : "") + '"><img src="' + esc(ka.src) + '" alt="' + esc(ka.alt) + '">' + (ka.caption ? "<figcaption>" + esc(ka.caption) + "</figcaption>" : "") + "</figure>"
+      : '<div class="pp-hero"><img class="pp-key" src="' + esc(ka.src) + '" alt="' + esc(ka.alt) + '">' + head + "</div>";
+    var video = pg.video ? '<p class="subhead">Demo video</p><div class="pp-video"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(pg.video) + '" title="' + esc(p.title) + ' demo video" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>' : "";
+    var steps = pg.steps ? '<p class="subhead">How it plays</p><ol class="pp-steps">' + pg.steps.map(function (st) { return "<li><b>" + esc(st[0]) + "</b><span>" + esc(st[1]) + "</span></li>"; }).join("") + "</ol>" : "";
+    v.querySelector(".pp-content").innerHTML = hero + gallery +
+      '<div class="pp-grid"><div><p class="subhead first">About the game</p><p class="pp-about">' + esc(pg.about) + "</p>" + steps +
+        "</div>" +
+        '<aside class="pp-side"><dl class="facts">' + pg.facts.filter(function (f) { return f[0] !== "My role"; }).map(function (f) { return "<dt>" + esc(f[0]) + "</dt><dd>" + esc(f[1]) + "</dd>"; }).join("") + "</dl>" +
+        '<div class="tags">' + tags + '</div><div class="pp-links">' + pg.links.map(function (l, i) { return '<a class="btn' + (i ? " ghost" : "") + '" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + " ↗</a>"; }).join("") + "</div></aside></div>" + video + docs;
+  }
+  // ---------- Projects deck: image planes stacked on a diagonal ----------
+  // Roll the mouse wheel to move through the stack: the front plane slides off toward you and the next one comes forward.
+  // The list is a loop, so rolling past the last project carries on into the first. Click the front plane to open it.
+  var deck = document.getElementById("deck"), deckStack = document.getElementById("deck-stack"), deckInfo = document.getElementById("deck-info");
+  var deckList = [], deckCards = [], deckPos = 0, deckTarget = 0, deckRaf = null, deckOpening = false, deckLastSlug = null;
+  function wrapI(i) { var n = deckList.length || 1; return ((Math.round(i) % n) + n) % n; }
+  function deckBuild() {
+    deckList = projects.filter(function (p) { return current === "All" || p.roles.indexOf(current) >= 0; });
+    deckStack.innerHTML = "";
+    deckCards = deckList.map(function (p, i) {
+      var face = p.image ? '<img src="' + esc(p.image) + '" alt="" loading="lazy" draggable="false" onerror="this.remove()">' : "";
+      var c = el("div", { class: "dk-card", "data-i": i, "aria-hidden": "true" },
+        '<div class="dk-face">' + blockout(p.seed, 320, 180, !p.link) + face + '</div><span class="dk-num">' + String(i + 1).padStart(2, "0") + "</span>");
+      c.addEventListener("click", function () {
+        if (swiped) return;
+        if (wrapI(deckTarget) !== i) { deckTarget += deckGap(i); return; }   // bring it forward the short way round
+        deckOpen(i);
+      });
+      deckStack.appendChild(c);
+      return c;
+    });
+    var keep = deckLastSlug ? deckList.findIndex(function (p) { return p.page && p.page.slug === deckLastSlug; }) : -1;
+    deckTarget = deckPos = keep >= 0 ? keep : wrapI(deckTarget);
+    deckShown = -2; deckInfoFor(wrapI(deckTarget), true);
+    deckLayout();
+  }
+  // Signed number of steps from the current front to plane i, taking the shorter way round the loop.
+  function deckGap(i) { var n = deckList.length, d = ((i - wrapI(deckTarget)) % n + n) % n; return d > n / 2 ? d - n : d; }
+  var deckShown = -2;
+  function deckInfoFor(i, now) {
+    if (i === deckShown) return;
+    deckShown = i;
+    var p = deckList[i];
+    var html = !p ? '<p class="dk-empty">No projects with this role yet.</p>' :
+      '<p class="dk-count"><b>' + String(i + 1).padStart(2, "0") + "</b> / " + String(deckList.length).padStart(2, "0") + (p.status ? " · " + esc(p.status) : "") + "</p>" +
+      '<h2 class="dk-title">' + esc(p.title) + "</h2>" +
+      '<p class="dk-kind">' + esc(p.kind) + " · " + esc(p.date) + "</p>" +
+      '<p class="my-role"><span>My role</span><b>' + esc(p.role) + "</b></p>" +
+      '<p class="dk-desc">' + esc(p.desc) + "</p>" +
+      '<div class="tags">' + p.roles.map(function (t) { return '<span class="tag' + (t === "Level Design" ? " ld" : "") + '">' + esc(t) + "</span>"; }).join("") + "</div>" +
+      '<div class="dk-actions">' + (p.page ? '<a class="btn dk-open" href="#p-' + p.page.slug + '">Open project →</a>' : "") + action(p) + "</div>";
+    if (now || reduce) { deckInfo.innerHTML = html; deckInfo.classList.remove("swap"); return; }
+    deckInfo.classList.add("swap");
+    clearTimeout(deckInfo._t);
+    deckInfo._t = setTimeout(function () { deckInfo.innerHTML = html; deckInfo.classList.remove("swap"); }, 160);
+  }
+  // Where each plane sits for a given distance d from the front (d = 0). Positive d recedes up and to the right.
+  var deckGeo = { sx: 120, sy: 70, sz: 160 };
+  function deckLayout() {
+    var w = deckStack.clientWidth, narrow = w < 560;
+    deckGeo = narrow ? { sx: w * 0.16, sy: w * 0.11, sz: 150 } : { sx: Math.min(150, w * 0.13), sy: Math.min(80, w * 0.07), sz: 170 };
+    deckApply();
+  }
+  function deckApply() {
+    var g = deckGeo, n = deckList.length;
+    deckCards.forEach(function (c, i) {
+      if (c.classList.contains("is-open")) return;
+      // Distance round the loop, from -1 (just passed, sliding off) up to n - 1 (furthest back).
+      var d = (((i - deckPos + 1) % n) + n) % n - 1;
+      var x = d * g.sx, y = -d * g.sy, z = -d * g.sz;
+      if (d < 0) { x = d * g.sx * 1.6; y = -d * g.sy * 1.6; z = -d * g.sz * 0.6; }   // passed planes slide off toward the viewer
+      var op = d < 0 ? Math.max(0, 1 + d * 1.4) : Math.max(0, 1 - Math.max(0, d - 4) * 0.6);
+      if (d > n - 1.5) op = Math.min(op, (n - 1 - d) * 2);                         // fade in at the back as it rejoins the loop
+      c.style.transform = "translate(-50%, -50%) translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px," + z.toFixed(1) + "px) rotateY(-32deg) rotateX(6deg)";
+      c.style.opacity = Math.max(0, op).toFixed(3);
+      c.style.zIndex = String(100 - Math.round(d * 10));
+      c.style.pointerEvents = op < 0.2 ? "none" : "";
+      c.classList.toggle("is-front", wrapI(deckPos) === i && Math.abs(d) < 0.5);
+      c.style.setProperty("--dim", (Math.min(1, Math.max(0, d) * 0.22)).toFixed(3));
+    });
+  }
+  function deckTick() {
+    var diff = deckTarget - deckPos;
+    deckPos = Math.abs(diff) < 0.001 ? deckTarget : deckPos + diff * (reduce ? 1 : 0.12);
+    deckApply();
+    deckInfoFor(wrapI(deckTarget));
+    deckRaf = requestAnimationFrame(deckTick);
+  }
+  // Opening: the front plane turns to face you and grows, the rest fall away, then the project page loads.
+  function deckOpen(i) {
+    var p = deckList[i];
+    if (!p || !p.page || deckOpening) return;
+    deckOpening = true; deckLastSlug = p.page.slug;
+    if (reduce) { location.hash = "p-" + p.page.slug; deckOpening = false; return; }
+    var c = deckCards[i];
+    deck.classList.add("opening"); c.classList.add("is-open");
+    c.style.transition = "transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)";
+    c.style.transform = "translate(-50%, -50%) translate3d(0, 0, 220px) rotateY(0deg) rotateX(0deg)";
+    setTimeout(function () {
+      quiet = "p-" + p.page.slug; location.hash = "p-" + p.page.slug;
+      deck.classList.remove("opening"); c.classList.remove("is-open"); c.style.transition = ""; deckOpening = false;
+    }, 650);
+  }
+  deckInfo.addEventListener("click", function (e) {
+    var a = e.target.closest(".dk-open");
+    if (!a) return;
+    e.preventDefault(); e.stopPropagation();
+    deckOpen(wrapI(deckTarget));
+  }, true);
+  // Wheel: one plane per notch, trackpads accumulate. No ends: it loops.
+  var wheelAcc = 0, wheelT = 0;
+  deck.addEventListener("wheel", function (e) {
+    if (deckList.length < 2) return;
+    e.preventDefault();
+    wheelAcc += Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    var t = Date.now();
+    if (Math.abs(wheelAcc) > 60 && t - wheelT > 140) { deckTarget += wheelAcc > 0 ? 1 : -1; wheelAcc = 0; wheelT = t; }
+  }, { passive: false });
+  // Phones have no wheel, so a swipe does the same job there.
+  var sw0 = null, swiped = false;
+  deck.addEventListener("pointerdown", function (e) { swiped = false; sw0 = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY }; });
+  deck.addEventListener("pointerup", function (e) {
+    if (!sw0) return;
+    var dx = e.clientX - sw0.x, dy = e.clientY - sw0.y; sw0 = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { deckTarget += dx < 0 ? 1 : -1; swiped = true; setTimeout(function () { swiped = false; }, 0); }
+  });
+  // Keyboard stays available for people who don't use a mouse; it isn't advertised.
+  deck.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); deckTarget += 1; }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); deckTarget -= 1; }
+    else if (e.key === "Enter" && e.target === deck) { e.preventDefault(); deckOpen(wrapI(deckTarget)); }
+  });
+
+  // List view stays available for anyone who prefers to scan everything at once.
+  var viewBtn = document.getElementById("proj-view"), projRoom = document.getElementById("room-projects");
+  function setProjView(list) {
+    projRoom.classList.toggle("as-list", list);
+    viewBtn.textContent = list ? "Show as deck" : "Show as list";
+    viewBtn.setAttribute("aria-pressed", String(list));
+    try { localStorage.setItem("md-proj-view", list ? "list" : "deck"); } catch (e) {}
+    deckSync();
+  }
+  viewBtn.addEventListener("click", function () { setProjView(!projRoom.classList.contains("as-list")); });
+  function deckSync() {
+    var on = !projRoom.hidden && !projRoom.classList.contains("as-list");
+    if (on && deckRaf == null) { deckLayout(); deckRaf = requestAnimationFrame(deckTick); }
+    else if (!on && deckRaf != null) { cancelAnimationFrame(deckRaf); deckRaf = null; }
+  }
+  new MutationObserver(deckSync).observe(projRoom, { attributes: true, attributeFilter: ["hidden"] });
+  window.addEventListener("resize", function () { if (deckRaf != null) deckLayout(); });
+  try { if (localStorage.getItem("md-proj-view") === "list") setProjView(true); } catch (e) {}
+
+  roleOrder.forEach(function (r) {
+    var count = r === "All" ? projects.length : projects.filter(function (p) { return p.roles.indexOf(r) >= 0; }).length;
+    var b = el("button", { class: "filter", type: "button", "aria-pressed": String(r === current), id: "f-" + r.replace(/\s/g, "-").toLowerCase() }, esc(r) + " · " + count);
+    b.addEventListener("click", function () {
+      current = r;
+      try { localStorage.setItem("md-filter", r); } catch (e) {}
+      Array.prototype.forEach.call(filtersEl.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+      renderProjects();
+    });
+    filtersEl.appendChild(b);
+  });
+  renderProjects();
+
+  var copyBtn = document.getElementById("copy-email"), status = document.getElementById("copy-status"), emailEl = document.getElementById("email");
+  copyBtn.addEventListener("click", function () {
+    var text = emailEl.textContent.trim();
+    function fallback() {
+      var range = document.createRange(); range.selectNodeContents(emailEl);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      status.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+    }
+    try { navigator.clipboard.writeText(text).then(function () { status.textContent = "Copied"; }, fallback); }
+    catch (e) { fallback(); }
+  });
+
+  // ---------- Dot transition ----------
+  // Between pages the screen fills with a halftone dot field that grows out from where you clicked,
+  // the page swaps underneath, then the dots shrink and scatter outward to reveal the new page.
+  var fx = document.getElementById("fx"), ctx = fx.getContext("2d");
+  var SPACING = 18, fxRunning = false, expected = null, pendingOrigin = null, quiet = null;
+  function sizeFx() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    fx.width = Math.round(innerWidth * dpr); fx.height = Math.round(innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  // Page change: the screen goes dark while a ring of star-like particles gathers and circles in the middle,
+  // the page swaps underneath, then the ring spreads outward and fades as the new page shows through.
+  var ring = null;
+  function makeRing() {
+    var n = Math.round(Math.min(900, Math.max(380, innerWidth * innerHeight / 1800))), R = Math.min(innerWidth, innerHeight) * 0.16, pts = [];
+    for (var i = 0; i < n; i++) {
+      var g = (Math.random() + Math.random() + Math.random()) / 3 - 0.5;           // soft band, denser in the middle
+      pts.push({
+        a: Math.random() * Math.PI * 2, r: R * (1 + g * 0.5), w: 0.9 + Math.random() * 0.9,
+        far: Math.max(innerWidth, innerHeight) * (0.45 + Math.random() * 0.4), off: Math.random() * 0.35,
+        s: 1.1 + Math.random() * 1.5, hot: Math.random() < 0.3, tw: Math.random() * 6.28
+      });
+    }
+    return { pts: pts, R: R };
+  }
+  // mode "cover": the dark fades in and particles spiral in to the ring. mode "reveal": the ring spreads out and everything fades.
+  function runDots(mode, origin, ms, done) {
+    if (mode === "cover" || !ring) ring = makeRing();
+    var t0 = null, cx = innerWidth / 2, cy = innerHeight / 2;
+    fx.hidden = false; fxRunning = true;
+    function frame(ts) {
+      if (t0 == null) t0 = ts;
+      var t = Math.min(1, (ts - t0) / ms), time = ts / 1000;
+      var e = mode === "cover" ? 1 - Math.pow(1 - t, 3) : t * t;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(9,12,11," + (mode === "cover" ? Math.min(1, t * 1.6) : 1 - Math.max(0, (t - 0.25) / 0.75)).toFixed(3) + ")";
+      ctx.fillRect(0, 0, innerWidth, innerHeight);
+      ctx.globalCompositeOperation = "lighter";
+      ring.pts.forEach(function (p) {
+        var k, rad, al;
+        if (mode === "cover") { k = Math.max(0, Math.min(1, (t - p.off) / (1 - p.off))); k = 1 - Math.pow(1 - k, 3); rad = p.far + (p.r - p.far) * k; al = k; }
+        else { k = Math.max(0, Math.min(1, (t - p.off * 0.5) / (1 - p.off * 0.5))); rad = p.r + k * k * p.far * 0.9; al = 1 - k; }
+        var ang = p.a + time * p.w * 1.1 + (1 - (mode === "cover" ? k : 1)) * 2.2;  // spirals in, then keeps circling
+        var x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad * 0.92;
+        ctx.globalAlpha = Math.max(0, al) * (p.hot ? 0.95 : 0.7) * (0.75 + 0.25 * Math.sin(time * 3 + p.tw));
+        ctx.fillStyle = p.hot ? "#5ccf86" : "#dcefe3";
+        ctx.fillRect(x - p.s / 2, y - p.s / 2, p.s, p.s);
+      });
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      if (t < 1) requestAnimationFrame(frame);
+      else {
+        if (mode === "reveal") { ctx.clearRect(0, 0, innerWidth, innerHeight); fx.hidden = true; ring = null; }
+        fxRunning = false;
+        if (done) done();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  function norm(h) { return String(h || "").replace(/^#/, ""); }
+  // Navigate to a view ("" is the work ID, "map" the floor plan, otherwise a room) with the dot transition starting at `origin`.
+  function go(hash, origin) {
+    hash = norm(hash);
+    if (reduce) { location.hash = hash; return; }
+    if (fxRunning) return;
+    origin = origin || { x: innerWidth / 2, y: innerHeight / 2 };
+    sizeFx();
+    runDots("cover", origin, 650, function () {
+      if (norm(location.hash) === hash) { route(); runDots("reveal", origin, 800); return; }
+      expected = hash; pendingOrigin = origin;
+      location.hash = hash;
+    });
+  }
+  window.addEventListener("hashchange", function () {
+    var h = norm(location.hash);
+    if (quiet !== null && h === quiet) { quiet = null; route(); return; }
+    if (expected !== null && h === expected) {
+      expected = null; route(); runDots("reveal", pendingOrigin, 800); return;
+    }
+    // Browser back/forward: cover from the center, swap, reveal.
+    if (reduce || fxRunning) { route(); return; }
+    var c = { x: innerWidth / 2, y: innerHeight / 2 };
+    sizeFx();
+    runDots("cover", c, 520, function () { route(); runDots("reveal", c, 800); });
+  });
+  // In-page links (back to floor plan, next/previous room) use the transition too.
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    e.preventDefault();
+    go(a.getAttribute("href"), { x: e.clientX || innerWidth / 2, y: e.clientY || innerHeight / 2 });
+  });
+
+  // ---------- Work ID on a lanyard ----------
+  // Verlet rope from a pinned anchor; the badge is one more particle hanging off the rope's end.
+  var titleEl = document.getElementById("title"), strap = document.getElementById("strap"), sctx = strap.getContext("2d");
+  var badge = document.getElementById("badge"), reader = document.getElementById("reader");
+  var readerScreen = document.getElementById("reader-screen");
+  var rope = [], card = null, anchor = { x: 0, y: 0 }, SEG = 9, segLen = 20, hang = 190;
+  var drag = null, physRaf = null, entering = false, lastTap = 0;
+
+  (function barcode() {
+    var bc = document.getElementById("barcode"), seedStr = "MINGQIANDONG-LD", out = "";
+    for (var i = 0; i < 34; i++) { var c = seedStr.charCodeAt(i % seedStr.length) + i * 7; out += '<i style="width:' + (1 + (c % 3)) + 'px"></i>'; }
+    bc.innerHTML = out;
+  })();
+
+  function layoutTitle(settled) {
+    var w = titleEl.clientWidth, h = titleEl.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    strap.width = Math.round(w * dpr); strap.height = Math.round(h * dpr);
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var narrow = w < 700;
+    anchor = { x: narrow ? w * 0.33 : w * 0.32, y: -10 };
+    var bh = badge.offsetHeight;
+    hang = Math.max(90, Math.min(narrow ? h * 0.22 : h * 0.3, h - bh - (narrow ? 230 : 120)));
+    segLen = hang / SEG;
+    // Put the reader within the lanyard's reach, off to the right of where the badge rests.
+    var rw = reader.offsetWidth, rh = reader.offsetHeight, R = hang + bh / 2 + 4, rcx, rcy;
+    if (narrow) {
+      rcx = w - rw / 2 - 14;
+      var dxr = rcx - anchor.x;
+      rcy = Math.sqrt(Math.max(0, Math.pow(R * 0.93, 2) - dxr * dxr));
+    } else {
+      // Mount it on the right gate panel, just past the seam, if the lanyard can reach that far.
+      rcx = w / 2 + rw / 2 + 50;
+      var dxw = rcx - anchor.x;
+      if (dxw < R * 0.9) rcy = Math.sqrt(Math.pow(R * 0.93, 2) - dxw * dxw);
+      else { rcx = Math.min(anchor.x + R * 0.68, w - rw / 2 - 48); rcy = R * 0.68; }
+    }
+    rcy = Math.max(rh / 2 + 20, rcy);
+    reader.style.left = (rcx - rw / 2) + "px"; reader.style.top = (rcy - rh / 2) + "px";
+    // On load the badge starts lifted up and off to one side with the strap slack, so it drops,
+    // catches on the strap and swings before settling (unless motion is reduced).
+    var d = bh / 2 + 4, drop = !(reduce || settled);
+    var sx = drop ? anchor.x + hang * (narrow ? 0.35 : 0.5) : anchor.x, sy = drop ? anchor.y + hang * 0.15 - d : anchor.y + hang;
+    rope = [];
+    for (var i = 0; i <= SEG; i++) {
+      var t = i / SEG, x = anchor.x + (sx - anchor.x) * t, y = anchor.y + (sy - anchor.y) * t;
+      rope.push({ x: x, y: y, px: x, py: y });
+    }
+    card = { x: sx, y: sy + d, d: d };
+    card.px = card.x; card.py = card.y;
+  }
+
+  function constrain(a, b, len, pinA, slack) {
+    var dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy) || 0.001, diff = (dist - len) / dist;
+    if (slack && dist < len) return; // the strap can go slack but never stretch
+    if (pinA) { b.x -= dx * diff; b.y -= dy * diff; }
+    else { a.x += dx * diff * 0.5; a.y += dy * diff * 0.5; b.x -= dx * diff * 0.5; b.y -= dy * diff * 0.5; }
+  }
+  function stepPhysics() {
+    var g = 0.55, damp = 0.975, all = rope.slice(1).concat([card]);
+    all.forEach(function (p) {
+      var vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
+      p.px = p.x; p.py = p.y; p.x += vx; p.y += vy + g;
+    });
+    if (drag) { card.x = drag.x; card.y = drag.y; }
+    for (var it = 0; it < 14; it++) {
+      rope[0].x = anchor.x; rope[0].y = anchor.y;
+      for (var i = 0; i < SEG; i++) constrain(rope[i], rope[i + 1], segLen, i === 0, true);
+      if (drag) {
+        // The badge follows the pointer; pull the rope end toward it instead of the other way round.
+        var e = rope[SEG], dx = e.x - card.x, dy = e.y - card.y, dist = Math.hypot(dx, dy) || 0.001;
+        e.x = card.x + dx / dist * card.d; e.y = card.y + dy / dist * card.d;
+      } else constrain(rope[SEG], card, card.d, false);
+    }
+    // Keep the rope from stretching past its length while dragging far away.
+    if (drag) {
+      var total = Math.hypot(card.x - anchor.x, card.y - anchor.y), max = hang + card.d + 30;
+      if (total > max) { card.x = anchor.x + (card.x - anchor.x) / total * max; card.y = anchor.y + (card.y - anchor.y) / total * max; drag.x = card.x; drag.y = card.y; }
+    }
+  }
+  function drawTitle() {
+    var w = titleEl.clientWidth, h = titleEl.clientHeight, cs = getComputedStyle(document.documentElement);
+    var ink = cs.getPropertyValue("--ink").trim(), accent = cs.getPropertyValue("--accent").trim();
+    sctx.clearRect(0, 0, w, h);
+    // Strap: a wide ribbon with a center stitch.
+    sctx.lineCap = "round"; sctx.lineJoin = "round";
+    sctx.beginPath(); sctx.moveTo(rope[0].x, rope[0].y);
+    for (var i = 1; i < rope.length; i++) sctx.lineTo(rope[i].x, rope[i].y);
+    sctx.strokeStyle = "#c8302a"; sctx.lineWidth = 16; sctx.stroke();
+    sctx.setLineDash([6, 6]); sctx.strokeStyle = "rgba(255,255,255,0.45)"; sctx.lineWidth = 1.5; sctx.stroke(); sctx.setLineDash([]);
+    // Clip ring at the badge.
+    var end = rope[SEG];
+    sctx.beginPath(); sctx.arc(end.x, end.y, 7, 0, Math.PI * 2); sctx.strokeStyle = "#c9cfcc"; sctx.lineWidth = 3; sctx.stroke();
+    // Badge: hang angle from the rope end to the badge center, tilt from sideways speed.
+    var ang = -Math.atan2(card.x - end.x, card.y - end.y) * 180 / Math.PI;
+    var vx = card.x - card.px, tilt = Math.max(-35, Math.min(35, vx * 2.2));
+    badge.style.transform = "translate(" + (card.x - badge.offsetWidth / 2).toFixed(1) + "px," + (card.y - badge.offsetHeight / 2).toFixed(1) + "px) rotate(" + ang.toFixed(2) + "deg) rotateY(" + tilt.toFixed(1) + "deg)";
+    var over = overReader();
+    reader.classList.toggle("armed", over && !entering);
+    if (!entering) readerScreen.textContent = over ? (drag ? "Release to scan" : "Reading") : "Tap badge";
+  }
+  function overReader() {
+    var r = reader.getBoundingClientRect(), t = titleEl.getBoundingClientRect();
+    var cx = card.x + t.left, cy = card.y + t.top;
+    return cx > r.left - 40 && cx < r.right + 40 && cy > r.top - 60 && cy < r.bottom + 60;
+  }
+  function loop() {
+    stepPhysics(); drawTitle();
+    physRaf = requestAnimationFrame(loop);
+  }
+  function startTitle() { if (physRaf == null) { layoutTitle(); entering = false; reader.classList.remove("granted"); physRaf = requestAnimationFrame(loop); } }
+  function stopTitle() { if (physRaf != null) { cancelAnimationFrame(physRaf); physRaf = null; } }
+  function showTitle(on) { titleEl.hidden = !on; titleEl.classList.remove("opening"); if (on) startTitle(); else stopTitle(); }
+
+  function localPoint(e) { var t = titleEl.getBoundingClientRect(); return { x: e.clientX - t.left, y: e.clientY - t.top }; }
+  badge.addEventListener("pointerdown", function (e) {
+    if (entering) return;
+    var now = Date.now();
+    if (now - lastTap < 320) { badge.classList.toggle("flipped"); lastTap = 0; return; }
+    lastTap = now;
+    var p = localPoint(e);
+    drag = { x: card.x, y: card.y, ox: card.x - p.x, oy: card.y - p.y };
+    badge.classList.add("dragging");
+    badge.setPointerCapture(e.pointerId);
+  });
+  badge.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var p = localPoint(e);
+    drag.x = p.x + drag.ox; drag.y = p.y + drag.oy;
+  });
+  function release() {
+    if (!drag) return;
+    drag = null; badge.classList.remove("dragging");
+    if (overReader()) grant();
+  }
+  badge.addEventListener("pointerup", release);
+  badge.addEventListener("pointercancel", release);
+  function grant() {
+    entering = true;
+    reader.classList.remove("armed"); reader.classList.add("granted");
+    readerScreen.textContent = "Access granted";
+    openGate();
+  }
+  badge.addEventListener("dblclick", function (e) { e.preventDefault(); });
+  // The floor plan is drawn underneath, the gate unlocks and slides apart, then the URL moves to #map.
+  function openGate() {
+    entering = true;
+    reader.classList.remove("armed"); reader.classList.add("granted");
+    readerScreen.textContent = "Access granted";
+    if (reduce) { quiet = "map"; location.hash = "map"; return; }
+    setTimeout(function () {
+      home.hidden = false; setViewBox(L.vb);
+      titleEl.classList.add("opening");
+      setTimeout(function () { quiet = "map"; location.hash = "map"; }, 2150);
+    }, 600);
+  }
+
+  // ---------- Home: isometric particle building ----------
+  // Five floors stacked in true isometric (plan axes at 30°, so corners read as 120° and 60°).
+  // Floor 1F is About, up to 5F Contact on the roof. Each floor is a cloud of points sampled from its walls,
+  // slab and props. Hovering a floor zooms it out of the stack and the headline particles re-form into its title.
+  var PB = (function () {
+    var stage = document.querySelector("#home .plan"), cv = document.getElementById("pb"), c = cv.getContext("2d");
+    var cap = document.getElementById("pb-cap"), lift = document.getElementById("pb-lift");
+    var C30 = Math.cos(Math.PI / 6), S30 = 0.5;
+    var W = 9, D = 6, WH = 1.1, H = 3.0;              // plan size, wall height, floor-to-floor
+    var PALE = "#dcefe3", HOT = "#5ccf86", BG = "9,12,11";
+    var FLOOR = [
+      { title: "About me", label: "1F" },
+      { title: "Level design", label: "2F" },
+      { title: "Projects", label: "3F" },
+      { title: "Experience", label: "4F" },
+      { title: "Contact", label: "5F" }
+    ];
+    var REST_TEXT = ["MD"];
+
+    // --- geometry: lines and flat areas in plan units, z up ---
+    function G() { return { L: [], A: [] }; }
+    function line(g, a, b, w, hot) { g.L.push([a, b, w == null ? 1 : w, hot ? 1 : 0]); }
+    function area(g, o, u, v, w, hot) { g.A.push([o, u, v, w == null ? 1 : w, hot ? 1 : 0]); }
+    function wall(g, x1, y1, x2, y2, h, hot) {
+      var a = [x1, y1, 0], b = [x2, y2, 0], a2 = [x1, y1, h], b2 = [x2, y2, h];
+      line(g, a, b, 0.9, hot); line(g, a2, b2, 1.5, hot); line(g, a, a2, 0.7, hot); line(g, b, b2, 0.7, hot);
+      area(g, a, [x2 - x1, y2 - y1, 0], [0, 0, h], 0.12, hot);
+    }
+    // A wall along one axis with door gaps given as [from, to] pairs.
+    function wallGaps(g, axis, at, from, to, gaps, h, hot) {
+      var cur = from;
+      (gaps || []).concat([[to, to]]).forEach(function (gp) {
+        if (gp[0] > cur) { if (axis === "x") wall(g, cur, at, gp[0], at, h, hot); else wall(g, at, cur, at, gp[0], h, hot); }
+        cur = gp[1];
+      });
+    }
+    function box(g, x, y, z, w, d, h, hot, wt) {
+      wt = wt == null ? 1 : wt;
+      var P = function (i, j, k) { return [x + i * w, y + j * d, z + k * h]; };
+      [[0,0,0,1,0,0],[0,1,0,1,1,0],[0,0,0,0,1,0],[1,0,0,1,1,0],[0,0,1,1,0,1],[0,1,1,1,1,1],[0,0,1,0,1,1],[1,0,1,1,1,1],
+       [0,0,0,0,0,1],[1,0,0,1,0,1],[0,1,0,0,1,1],[1,1,0,1,1,1]].forEach(function (e) { line(g, P(e[0], e[1], e[2]), P(e[3], e[4], e[5]), wt, hot); });
+      area(g, [x, y, z + h], [w, 0, 0], [0, d, 0], 0.25 * wt, hot);
+    }
+    function ring(g, cx, cy, z, r, w, hot) {
+      for (var i = 0; i < 40; i++) {
+        var a = i / 40 * Math.PI * 2, b = (i + 1) / 40 * Math.PI * 2;
+        line(g, [cx + Math.cos(a) * r, cy + Math.sin(a) * r, z], [cx + Math.cos(b) * r, cy + Math.sin(b) * r, z], w, hot);
+      }
+    }
+    function slab(g) {
+      area(g, [0, 0, 0], [W, 0, 0], [0, D, 0], 0.1);
+      line(g, [0, 0, 0], [W, 0, 0], 1.2); line(g, [0, 0, 0], [0, D, 0], 1.2);
+      line(g, [W, 0, 0], [W, D, 0], 1.2); line(g, [0, D, 0], [W, D, 0], 1.2);
+      // slab edge thickness
+      line(g, [W, 0, -0.18], [W, D, -0.18], 0.6); line(g, [0, D, -0.18], [W, D, -0.18], 0.6);
+    }
+    // Back walls are full height, front walls are cut low so you can see in, like a cutaway model.
+    function shell(g, frontGapY, frontGapX) {
+      wall(g, 0, 0, W, 0, WH); wall(g, 0, 0, 0, D, WH);
+      wallGaps(g, "x", D, 0, W, frontGapY, 0.32);
+      wallGaps(g, "y", W, 0, D, frontGapX, 0.32);
+    }
+    function core(g) { box(g, 0, 0, 0, 1.4, 1.4, WH, false, 0.8); for (var i = 0; i < 4; i++) line(g, [0.2, 0.2 + i * 0.3, 0.02], [1.2, 0.2 + i * 0.3, 0.02], 0.5); }
+
+    var BUILD = [
+      function (g) { // 1F About: lobby with the front door, reception desk, spawn point
+        slab(g); shell(g, [[3.6, 5.4]]); core(g);
+        wall(g, 6.4, 0, 6.4, 2.6, WH); wallGaps(g, "x", 2.6, 6.4, W, [[7.1, 8.1]], WH);
+        box(g, 2.2, 1.3, 0, 2.6, 0.6, 0.45);
+        ring(g, 4.5, 3.9, 0.02, 0.75, 1.6, true); ring(g, 4.5, 3.9, 0.02, 0.35, 1.2, true);
+        line(g, [3.6, D, 0], [3.6, D, 0.9], 1.4, true); line(g, [5.4, D, 0], [5.4, D, 0.9], 1.4, true);
+      },
+      function (g) { // 2F Level design: three white box rooms off a corridor
+        slab(g); shell(g); core(g);
+        wall(g, 3, 1.4, 3, 3.6, WH); wall(g, 6, 0, 6, 3.6, WH);
+        wallGaps(g, "x", 3.6, 0, W, [[1.3, 2.3], [4, 5], [7, 8]], WH);
+        box(g, 1.6, 0.3, 0, 1.1, 1.0, 0.9); box(g, 0.4, 1.9, 0, 0.8, 1.2, 0.45);
+        box(g, 3.4, 0.4, 0, 2.2, 0.8, 0.35); box(g, 3.4, 1.2, 0, 1.0, 1.6, 0.7);
+        box(g, 6.4, 0.4, 0, 0.9, 2.6, 0.6); box(g, 7.8, 0.4, 0, 0.8, 0.8, 1.0);
+        line(g, [0.6, 4.8, 0.02], [8.4, 4.8, 0.02], 1.8, true);
+        [1.8, 4.5, 7.5].forEach(function (x) { line(g, [x, 4.8, 0.02], [x, 3.6, 0.02], 1.0, true); });
+      },
+      function (g) { // 3F Projects: seven small rooms, one per game
+        slab(g); shell(g); core(g);
+        [2.25, 4.5, 6.75].forEach(function (x) { wall(g, x, 0, x, 2.6, WH); });
+        wallGaps(g, "x", 2.6, 1.4, W, [[3, 3.7], [5.3, 6], [7.5, 8.2]], WH);
+        wall(g, 3, 3.4, 3, D, WH); wall(g, 6, 3.4, 6, D, WH);
+        wallGaps(g, "x", 3.4, 0, W, [[1.2, 1.9], [4.2, 4.9], [7.2, 7.9]], WH);
+        [[3.1, 1.0], [5.4, 1.0], [7.6, 1.0], [1.2, 4.5], [4.2, 4.5], [7.2, 4.5]].forEach(function (p) { box(g, p[0], p[1], 0, 0.55, 0.55, 0.55, false, 0.8); });
+        box(g, 1.7, 1.6, 0, 0.45, 0.45, 0.45, false, 0.8);
+        line(g, [0.4, 3.0, 0.02], [8.6, 3.0, 0.02], 1.8, true);
+      },
+      function (g) { // 4F Experience: four equal rows, the studio internship first
+        slab(g); shell(g); core(g);
+        [1.5, 3, 4.5].forEach(function (y) { wall(g, 1.4, y, 6.8, y, WH); });
+        wallGaps(g, "y", 6.8, 0, D, [[0.4, 1.1], [1.9, 2.6], [3.4, 4.1], [4.9, 5.6]], WH);
+        box(g, 1.8, 0.5, 0, 4.4, 0.5, 0.4, true);
+        [2.0, 3.5, 5.0].forEach(function (y) { box(g, 0.5, y, 0, 5.7, 0.5, 0.4); });
+        line(g, [7.9, 0.4, 0.02], [7.9, 5.6, 0.02], 1.8, true);
+      },
+      function (g) { // 5F Contact: the roof, with the objective beacon
+        slab(g);
+        wall(g, 0, 0, W, 0, 0.35); wall(g, 0, 0, 0, D, 0.35); wall(g, 0, D, W, D, 0.35); wall(g, W, 0, W, D, 0.35);
+        box(g, 0, 0, 0, 1.4, 1.4, 0.9);
+        ring(g, 5.4, 3.4, 0.02, 1.7, 1.0); ring(g, 5.4, 3.4, 0.02, 0.9, 1.4, true); ring(g, 5.4, 3.4, 0.02, 0.4, 1.4, true);
+        line(g, [5.4, 3.4, 0], [5.4, 3.4, 2.4], 4.5, true);
+        ring(g, 5.4, 3.4, 2.4, 0.18, 2, true);
+      }
+    ];
+    var TOPS = [WH, WH, WH, WH, 2.4];                // tallest thing on each floor, for fitting
+
+    function sample(g, n) {
+      var items = [], tot = 0;
+      g.L.forEach(function (l) {
+        var len = Math.hypot(l[1][0] - l[0][0], l[1][1] - l[0][1], l[1][2] - l[0][2]);
+        tot += len * l[2]; items.push({ t: 0, l: l, c: tot });
+      });
+      g.A.forEach(function (a) {
+        var u = a[1], v = a[2];
+        var cx = u[1] * v[2] - u[2] * v[1], cy = u[2] * v[0] - u[0] * v[2], cz = u[0] * v[1] - u[1] * v[0];
+        tot += Math.hypot(cx, cy, cz) * a[3] * 1.4; items.push({ t: 1, a: a, c: tot });
+      });
+      var out = [];
+      for (var i = 0; i < n; i++) {
+        var r = Math.random() * tot, lo = 0, hi = items.length - 1;
+        while (lo < hi) { var m = (lo + hi) >> 1; if (items[m].c < r) lo = m + 1; else hi = m; }
+        var it = items[lo], p, hot;
+        if (it.t === 0) { var k = Math.random(), A = it.l[0], B = it.l[1]; p = [A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k, A[2] + (B[2] - A[2]) * k]; hot = it.l[3]; }
+        else { var s = Math.random(), t = Math.random(), O = it.a[0], U = it.a[1], V = it.a[2]; p = [O[0] + U[0] * s + V[0] * t, O[1] + U[1] * s + V[1] * t, O[2] + U[2] * s + V[2] * t]; hot = it.a[4]; }
+        out.push({ x: p[0] + (Math.random() - 0.5) * 0.04, y: p[1] + (Math.random() - 0.5) * 0.04, z: p[2] + (Math.random() - 0.5) * 0.03, hot: hot });
+      }
+      return out;
+    }
+    function iso(x, y, z) { return [(x - y) * C30, (x + y) * S30 - z]; }
+    var CEN = iso(W / 2, D / 2, WH / 2);               // the point a floor scales around
+
+    // --- particles ---
+    var P = [], floorSets = [], poolSets = [], textSet = [], dustSet = [], built = false, N_FLOOR = 0, N_TEXT = 0, N_DUST = 0, N_POOL = 0;
+    function build() {
+      var area = stage.clientWidth * stage.clientHeight, lite = area < 420000 || (navigator.hardwareConcurrency || 8) <= 4;
+      N_FLOOR = lite ? 1000 : 1750; N_POOL = Math.round(N_FLOOR * 1.3); N_TEXT = lite ? 1800 : 3200; N_DUST = lite ? 160 : 360;
+      P = []; floorSets = [];
+      BUILD.forEach(function (fn, f) {
+        var g = G(); fn(g);
+        var pts = sample(g, N_FLOOR + N_POOL), set = [], pool = [];
+        pts.forEach(function (q, i) {
+          var p = mk(); p.f = f; p.q = q; p.hot = q.hot; P.push(p);
+          if (i < N_FLOOR) set.push(p); else { p.pool = true; pool.push(p); }
+        });
+        // Each extra particle is born from a nearby floor particle when the floor opens up, and folds back into it after.
+        pool.forEach(function (p) { p.parent = set[Math.floor(Math.random() * set.length)]; });
+        floorSets.push(set); poolSets.push(pool);
+      });
+      textSet = []; for (var i = 0; i < N_TEXT; i++) { var p = mk(); p.f = -1; p.text = true; textSet.push(p); P.push(p); }
+      dustSet = []; for (i = 0; i < N_DUST; i++) { p = mk(); p.f = -2; p.dust = true; p.a = 0.0; dustSet.push(p); P.push(p); }
+      built = true;
+    }
+    function mk() {
+      return { x: 0, y: 0, ox: 0, oy: 0, tx: 0, ty: 0, fx: 0, fy: 0, cx: 0, cy: 0, t0: 0, dur: 0, a: 0, ta: 0, ph: Math.random() * 6.283, hot: 0, sz: 0.8 + Math.random() * 0.7 };
+    }
+    // Every move is a drift along a gentle curve with its own delay and speed, so a shape spreads out or gathers
+    // like a cloud of stars rather than snapping as one piece.
+    function now() { return performance.now(); }
+    var PACE = 0.75;                                   // all particle travel times scale by this (1 = original speed)
+    function glide(p, tx, ty, o) {
+      o = o || {};
+      if (Math.abs(tx - p.tx) < 0.5 && Math.abs(ty - p.ty) < 0.5 && !o.force) { p.tx = tx; p.ty = ty; return; }
+      p.fx = p.x; p.fy = p.y; p.tx = tx; p.ty = ty;
+      var dx = tx - p.x, dy = ty - p.y, arc = (o.arc == null ? 0.18 : o.arc) * (Math.random() - 0.5) * 2;
+      p.cx = (p.x + tx) / 2 - dy * arc; p.cy = (p.y + ty) / 2 + dx * arc;
+      p.t0 = now() + Math.random() * (o.delay == null ? 160 : o.delay) * PACE;
+      p.dur = ((o.min || 650) + Math.random() * ((o.max || 1100) - (o.min || 650))) * PACE;
+    }
+    function ease(k) { return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }
+
+    // --- layout ---
+    var dpr = 1, SW = 0, SH = 0, wide = true, regB = null, regT = null, focus = -1, layout = null, textKey = "";
+    function size() {
+      dpr = Math.min(TOUCH ? 1.5 : 2, window.devicePixelRatio || 1);
+      SW = stage.clientWidth; SH = stage.clientHeight;
+      cv.width = Math.round(SW * dpr); cv.height = Math.round(SH * dpr);
+      wide = SW > SH * 1.05;
+      var pad = Math.max(14, Math.min(SW, SH) * 0.04);
+      if (wide) {
+        var tw = Math.min(SW * 0.42, 520);
+        regT = { x: pad, y: pad, w: tw, h: SH - pad * 2 };
+        regB = { x: pad + tw, y: pad, w: SW - tw - pad * 2, h: SH - pad * 2 };
+      } else {
+        var liftH = 44, th = Math.max(54, SH * 0.1);
+        regT = { x: pad, y: pad, w: SW - pad * 2, h: th };
+        regB = { x: pad, y: pad + th + 8, w: SW - pad * 2, h: SH - pad * 2 - th - 8 - liftH };
+      }
+      placeChrome();
+    }
+    var HALF = (W + D) * S30 / 2;                    // half the height of a floor's diamond, in plan units
+    var FW = (W + D) * C30;                           // width of a floor on screen, in plan units
+    // Where each floor sits: scale s, screen centre (cx, cy), opacity.
+    // Floors stay where they are in the stack. The hovered one grows in place and its neighbours step aside a little,
+    // so the floor under the cursor is always the one you see. Hover bands come from the resting stack and never move.
+    function computeLayout(fo) {
+      var restH = 4 * H + HALF * 2 + WH + (TOPS[4] - WH);
+      var s0 = Math.min(regB.w * 0.86 / FW, regB.h * 0.96 / restH);
+      var cx = regB.x + regB.w * 0.46;
+      var ys = [0], f;
+      for (f = 1; f < 5; f++) ys[f] = ys[f - 1] - H * s0;
+      var top = ys[4] - (HALF + TOPS[4]) * s0, bot = ys[0] + (HALF + 0.2) * s0;
+      var off = regB.y + (regB.h - (bot - top)) / 2 - top;
+      var rest = ys.map(function (y) { return y + off; });
+      var out = [];
+      var Z = fo < 0 ? 1 : Math.min(1.75, regB.w * 0.8 / (FW * s0));
+      var push = fo < 0 ? 0 : HALF * s0 * (Z - 1) * 0.45;
+      for (f = 0; f < 5; f++) {
+        var s = fo < 0 || f !== fo ? s0 : s0 * Z, cy = rest[f];
+        if (fo >= 0 && f > fo) cy -= push + (f - fo - 1) * 0;
+        if (fo >= 0 && f < fo) cy += push;
+        if (f === fo) {                                    // keep the grown floor inside the frame
+          var t = cy - (HALF + TOPS[f]) * s, bt = cy + (HALF + 0.2) * s;
+          if (t < regB.y) cy += regB.y - t;
+          if (bt > regB.y + regB.h) cy -= bt - (regB.y + regB.h);
+        }
+        out.push({ s: s, cx: cx, cy: cy, a: fo < 0 || f === fo ? 1 : 0.32 });
+      }
+      // Fixed hover bands: the screen height of the building split at the midpoints between resting floors.
+      out.bands = rest.map(function (y, f) {
+        return [f < 4 ? (y + rest[f + 1]) / 2 : regB.y - 20, f > 0 ? (y + rest[f - 1]) / 2 : regB.y + regB.h + 20];
+      });
+      out.rest = rest;
+      out.zone = { x0: cx - FW * s0 * Z / 2 - 30, x1: regB.x + regB.w + 10, tick: regB.x + regB.w - 30 };
+      out.base = { x: cx, y: rest[0] + HALF * s0, s: s0 };
+      return out;
+    }
+    function place(p, L) { var v = iso(p.q.x, p.q.y, p.q.z); return [L.cx + (v[0] - CEN[0]) * L.s, L.cy + (v[1] - CEN[1]) * L.s]; }
+    function applyFloors(o) {
+      layout = computeLayout(focus);
+      floorSets.forEach(function (set, f) {
+        var L = layout[f], open = f === focus;
+        set.forEach(function (p) { var q = place(p, L); glide(p, q[0], q[1], o); p.ta = L.a * (p.hot ? 1 : 0.85); });
+        poolSets[f].forEach(function (p) {
+          if (open) {
+            if (p.a < 0.05) { p.x = p.parent.x; p.y = p.parent.y; p.tx = p.ty = -1; }   // born where its parent is
+            var q = place(p, L); glide(p, q[0], q[1], { delay: 260, min: 700, max: 1300, arc: 0.2, force: true });
+            p.ta = p.hot ? 1 : 0.85;
+          } else {
+            glide(p, p.parent.tx, p.parent.ty, { delay: 120, min: 450, max: 800, arc: 0.25 });
+            p.ta = 0;
+          }
+        });
+      });
+    }
+
+    // --- headline made of particles ---
+    var textCache = {};
+    function textPoints(lines, n) {
+      var key = lines.join("|") + "@" + Math.round(regT.w) + "x" + Math.round(regT.h) + (wide ? "w" : "n");
+      if (textCache[key]) return textCache[key];
+      var off = document.createElement("canvas"), oc = off.getContext("2d");
+      var bw = Math.round(regT.w), bh = Math.round(wide ? Math.min(regT.h * 0.36, 230) : regT.h);
+      off.width = bw; off.height = bh;
+      var fam = '800 100px "Big Shoulders Display", "Arial Narrow", Impact, sans-serif';
+      oc.font = fam;
+      var widest = Math.max.apply(null, lines.map(function (t) { return oc.measureText(t.toUpperCase()).width; }));
+      var fs = Math.min(100 * bw * 0.98 / widest, bh / (lines.length * 0.92));
+      oc.font = fam.replace("100px", fs + "px"); oc.textBaseline = "alphabetic"; oc.fillStyle = "#fff";
+      var lh = fs * 0.9, y0 = (bh - lh * lines.length) / 2 + fs * 0.78;
+      lines.forEach(function (t, i) { oc.fillText(t.toUpperCase(), wide ? 0 : (bw - oc.measureText(t.toUpperCase()).width) / 2, y0 + i * lh); });
+      var data = oc.getImageData(0, 0, bw, bh).data, px = [], step = Math.max(1, Math.round(fs / 60));
+      for (var y = 0; y < bh; y += step) for (var x = 0; x < bw; x += step) if (data[(y * bw + x) * 4 + 3] > 140) px.push([x, y]);
+      var oy = wide ? regT.y + regT.h * 0.38 - bh / 2 : regT.y;
+      for (var j = px.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), tmp = px[j]; px[j] = px[r]; px[r] = tmp; }
+      var pts = [];
+      for (var i = 0; i < n; i++) { var q = px[i % Math.max(1, px.length)] || [bw / 2, bh / 2]; pts.push([regT.x + q[0] + Math.random() * step * 0.6, oy + q[1] + Math.random() * step * 0.6]); }
+      pts.box = { x: regT.x, y: oy, w: bw, h: bh, bottom: oy + y0 + lh * (lines.length - 1) + fs * 0.25, left: regT.x };
+      textCache[key] = pts; return pts;
+    }
+    var textBox = null;
+    function applyText(kick) {
+      var lines = focus < 0 ? REST_TEXT : FLOOR[focus].title.split(" ");
+      if (!wide) lines = [lines.join(" ")];
+      var pts = textPoints(lines, N_TEXT); textBox = pts.box;
+      textSet.forEach(function (p, i) { glide(p, pts[i][0], pts[i][1], { delay: 220, min: 600, max: 1200, arc: 0.35 }); p.ta = 0.9; });
+      setCaption();
+    }
+    function setCaption() {
+      var html;
+      if (focus < 0) html = '<span class="k">B1</span> Game designer<br>' + (touch ? "Tap a floor to look inside." : "Hover a floor to look inside.");
+      else {
+        var r = ROOMS[focus];
+        html = '<span class="k">' + FLOOR[focus].label + " · " + r.code + "</span> " + esc(r.meta) + "<br><b>" + (touch ? "Tap again to enter →" : "Click to enter →") + "</b>";
+      }
+      if (cap.innerHTML === html) return;
+      cap.classList.add("swap");
+      clearTimeout(cap._t);
+      cap._t = setTimeout(function () { cap.innerHTML = html; placeCap(); cap.classList.remove("swap"); }, reduce ? 0 : 180);
+    }
+    function placeCap() {
+      if (!textBox) return;
+      if (wide) { cap.style.left = regT.x + "px"; cap.style.top = Math.min(textBox.bottom + 10, SH - 150) + "px"; cap.style.textAlign = "left"; cap.style.transform = ""; }
+      else { cap.style.left = "50%"; cap.style.transform = "translateX(-50%)"; cap.style.top = (regT.y + regT.h + 2) + "px"; cap.style.textAlign = "center"; }
+    }
+    function placeChrome() {
+      if (wide) { lift.style.left = regT.x + "px"; lift.style.right = ""; lift.style.bottom = Math.max(14, SH * 0.04) + "px"; lift.style.top = ""; }
+      else { lift.style.left = "8px"; lift.style.right = "8px"; lift.style.bottom = "10px"; }
+    }
+    function scatterDust() {
+      dustSet.forEach(function (p) {
+        p.tx = Math.random() * SW; p.ty = Math.random() * SH; p.ta = 0.12 + Math.random() * 0.25;
+        if (!p.x) { p.x = p.tx; p.y = p.ty; }
+      });
+    }
+
+    // --- focus and enter ---
+    var hint = document.getElementById("tb-hint"), restHint = hint.innerHTML;
+    function setFocus(f, opts) {
+      if (f === focus || leaving) return;
+      focus = f;
+      applyFloors(); applyText(true);
+      lift.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-f") === f); });
+      cv.classList.toggle("is-hot", f >= 0);
+      hint.innerHTML = f >= 0 ? ROOMS[f].hint : restHint;
+      if (reduce) snap();
+    }
+    var leaving = false;
+    function enter(f) {
+      if (leaving || f < 0) return;
+      leaving = true;
+      var id = ROOMS[f].id;
+      if (reduce) { quiet = id; location.hash = id; return; }
+      // Fly into the chosen floor: it blows up past the frame while everything else falls away.
+      var L = layout[f], zoom = 3.2;
+      P.forEach(function (p) {
+        if (p.dust) return;
+        if (p.f === f) glide(p, L.cx + (p.tx - L.cx) * zoom, L.cy + (p.ty - L.cy) * zoom, { delay: 60, min: 380, max: 520, arc: 0.05, force: true });
+        else { var ang = Math.random() * 6.283, r = 40 + Math.random() * 120; glide(p, p.x + Math.cos(ang) * r, p.y + Math.sin(ang) * r, { delay: 60, min: 380, max: 520, force: true }); }
+        p.ta = 0;
+      });
+      setTimeout(function () { quiet = id; location.hash = id; }, 480);
+    }
+
+    // --- input ---
+    var mx = -9999, my = -9999, touch = TOUCH, pend = null, pendF = null;
+    function bandAt(x, y) {
+      if (!layout) return null;
+      if (x < layout.zone.x0 || x > layout.zone.x1 || y < regB.y - 20 || y > regB.y + regB.h + 20) return null;
+      for (var f = 0; f < 5; f++) { var b = layout.bands[f]; if (y >= b[0] && y < b[1]) return f; }
+      return null;
+    }
+    function inText(x, y) { return textBox && x >= regT.x && x <= regT.x + regT.w && y >= textBox.y && y <= textBox.y + textBox.h + 60; }
+    function want(f, delay) {
+      if (f === pendF) return;
+      pendF = f; clearTimeout(pend);
+      pend = setTimeout(function () { pendF = null; setFocus(f); }, delay);
+    }
+    function local(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    cv.addEventListener("pointermove", function (e) {
+      if (e.pointerType !== "mouse") return;
+      touch = false;
+      var p = local(e); mx = p[0]; my = p[1];
+      var f = bandAt(mx, my);
+      if (f != null) want(f, 40);
+      else if (!inText(mx, my)) want(-1, 260);
+      else { clearTimeout(pend); pendF = null; }
+    });
+    cv.addEventListener("pointerleave", function (e) { mx = my = -9999; if (e.pointerType === "mouse") want(-1, 260); });
+    cv.addEventListener("pointerup", function (e) {
+      var p = local(e), f = bandAt(p[0], p[1]);
+      if (e.pointerType !== "mouse") {
+        touch = true;
+        if (f == null) { if (focus >= 0 && inText(p[0], p[1])) enter(focus); else setFocus(-1); return; }
+        if (f === focus) enter(f); else { clearTimeout(pend); pendF = null; setFocus(f); }
+        return;
+      }
+      if (focus >= 0 && (f != null || inText(p[0], p[1]))) { clearTimeout(pend); pendF = null; enter(focus); }
+    });
+    // Lift buttons: the keyboard and screen reader way in, and a quick picker on phones.
+    lift.innerHTML = FLOOR.map(function (fl, f) { return { fl: fl, f: f }; }).reverse().map(function (o) {
+      return '<button type="button" data-f="' + o.f + '"><span>' + o.fl.label + "</span>" + esc(o.fl.title) + "</button>";
+    }).join("");
+    lift.querySelectorAll("button").forEach(function (b) {
+      var f = +b.getAttribute("data-f");
+      b.addEventListener("mouseenter", function () { clearTimeout(pend); pendF = null; setFocus(f); });
+      b.addEventListener("focus", function () { setFocus(f); });
+      b.addEventListener("blur", function () { want(-1, 260); });
+      b.addEventListener("click", function (e) {
+        if (e.detail === 0 || focus === f || !touch) enter(f); else setFocus(f);
+      });
+      b.addEventListener("pointerdown", function (e) { touch = e.pointerType !== "mouse"; });
+    });
+
+    // --- render loop ---
+    var raf = null, t0 = 0, rings = [0, 0.25, 0.5, 0.75];
+    function snap() { P.forEach(function (p) { p.x = p.fx = p.tx; p.y = p.fy = p.ty; p.dur = 0; p.a = p.ta; p.ox = p.oy = 0; }); }
+    function frame(ts) {
+      var t = ts / 1000, ms = now();
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.globalCompositeOperation = "source-over";
+      c.fillStyle = "rgba(" + BG + "," + (reduce ? 1 : 0.42) + ")";
+      c.fillRect(0, 0, SW, SH);
+      // ripples on the ground under the building, drawn as isometric circles
+      if (layout && !leaving) {
+        var B = layout.base;
+        c.lineWidth = 1;
+        rings.forEach(function (r0, i) {
+          var r = ((r0 + (reduce ? 0 : t * 0.07)) % 1), R = (4 + r * 9) * B.s;
+          c.strokeStyle = "rgba(92,207,134," + (0.22 * (1 - r) * (focus < 0 ? 1 : 0.5)).toFixed(3) + ")";
+          c.beginPath(); c.ellipse(B.x, B.y + 0.25 * B.s, R * 1.2247, R * 0.7071, 0, 0, Math.PI * 2); c.stroke();
+        });
+      }
+      // Floor markers beside the building, one per hover band, so the boundaries are visible.
+      if (layout && !leaving) {
+        c.font = "500 11px " + getComputedStyle(document.body).getPropertyValue("--font-mono");
+        c.textBaseline = "middle";
+        for (var fi = 0; fi < 5; fi++) {
+          var bd = layout.bands[fi], y0 = Math.max(bd[0], regB.y), y1 = Math.min(bd[1], regB.y + regB.h), on = fi === focus, tx = layout.zone.tick;
+          c.fillStyle = on ? "rgba(92,207,134,0.9)" : "rgba(220,239,227,0.16)";
+          c.fillRect(tx, y0 + 3, on ? 2 : 1, y1 - y0 - 6);
+          c.fillStyle = on ? "#5ccf86" : "rgba(220,239,227,0.35)";
+          c.fillText(FLOOR[fi].label, tx + 8, (y0 + y1) / 2);
+        }
+      }
+      c.globalCompositeOperation = "lighter";
+      var R = 40, R2 = R * R, still = reduce;
+      for (var pass = 0; pass < 2; pass++) {
+        c.fillStyle = pass ? HOT : PALE;
+        for (var i = 0; i < P.length; i++) {
+          var p = P[i];
+          if ((p.hot ? 1 : 0) !== pass) continue;
+          if (!still) {
+            if (p.dust) { p.x = p.tx + Math.sin(t * 0.13 + p.ph) * 14; p.y = p.ty + Math.cos(t * 0.11 + p.ph) * 10; }
+            else if (p.dur) {
+              var k = (ms - p.t0) / p.dur;
+              if (k <= 0) { p.x = p.fx; p.y = p.fy; }
+              else if (k >= 1) { p.x = p.tx; p.y = p.ty; p.dur = 0; }
+              else { var e = ease(k), u = 1 - e; p.x = u * u * p.fx + 2 * u * e * p.cx + e * e * p.tx; p.y = u * u * p.fy + 2 * u * e * p.cy + e * e * p.ty; }
+            } else { p.x = p.tx; p.y = p.ty; }
+            p.a += (p.ta - p.a) * (p.pool ? 0.05 : 0.07);
+            if (p.a < 0.02 && p.ta === 0) continue;
+            var dx = p.x - mx, dy = p.y - my, d2 = dx * dx + dy * dy;
+            if (d2 < R2 && d2 > 0.01 && !p.dust) { var d = Math.sqrt(d2), push = (1 - d / R) * 0.35; p.ox += dx / d * push; p.oy += dy / d * push; }
+            p.ox *= 0.92; p.oy *= 0.92;
+          }
+          if (p.a < 0.02) continue;
+          var px = p.x + p.ox + (p.dust ? 0 : Math.sin(t * 0.6 + p.ph) * 0.3), py = p.y + p.oy + (p.dust ? 0 : Math.cos(t * 0.5 + p.ph * 1.3) * 0.3);
+          var tw = p.dust ? 0.6 + 0.4 * Math.sin(t * 2 + p.ph * 3) : 1;
+          c.globalAlpha = Math.min(1, p.a * tw * (pass ? 0.95 : 0.7));
+          var s = p.text ? 1.5 : p.sz * (pass ? 1.7 : 1.3);
+          c.fillRect(px - s / 2, py - s / 2, s, s);
+        }
+      }
+      c.globalAlpha = 1;
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (!built) build();
+      leaving = false; focus = -1; pendF = null; clearTimeout(pend);
+      size(); scatterDust();
+      lift.querySelectorAll("button").forEach(function (b) { b.classList.remove("on"); });
+      cv.classList.remove("is-hot"); hint.innerHTML = restHint;
+      // Assemble from a loose cloud around the building's middle, like the cloud settling into shape.
+      var cx = regB.x + regB.w / 2, cy = regB.y + regB.h / 2;
+      P.forEach(function (p) {
+        if (p.dust) return;
+        var ang = Math.random() * 6.283, r = Math.pow(Math.random(), 0.6) * Math.min(SW, SH) * 0.45;
+        p.x = cx + Math.cos(ang) * r * 1.3; p.y = cy + Math.sin(ang) * r * 0.8; p.tx = p.ty = -9999; p.a = 0; p.ox = p.oy = 0;
+      });
+      applyFloors({ delay: 700, min: 900, max: 1700, arc: 0.4, force: true }); applyText(true);
+      poolSets.forEach(function (pool) { pool.forEach(function (p) { p.x = p.tx; p.y = p.ty; p.dur = 0; p.a = 0; }); });
+      dustSet.forEach(function (p) { p.x = p.tx; p.y = p.ty; });
+      if (reduce) snap();
+      c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = "rgb(" + BG + ")"; c.fillRect(0, 0, SW, SH);
+      if (raf == null) raf = requestAnimationFrame(frame);
+    }
+    function stop() { if (raf != null) { cancelAnimationFrame(raf); raf = null; } clearTimeout(pend); pendF = null; }
+    function resize() {
+      if (raf == null) return;
+      textCache = {}; size(); applyFloors(0); applyText(false); scatterDust(); placeCap();
+    }
+    // Run only while the home page is on screen; the font must be in before the headline is rasterised.
+    function sync() { if (home.hidden) stop(); else if (raf == null) start(); }
+    new MutationObserver(sync).observe(home, { attributes: true, attributeFilter: ["hidden"] });
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('800 100px "Big Shoulders Display"').then(function () { textCache = {}; if (raf != null) { applyText(true); } });
+    }
+    document.addEventListener("visibilitychange", function () { if (document.hidden) stop(); else sync(); });
+    return { sync: sync, resize: resize };
+  })();
+
+  // ---------- Boot ----------
+  var lastW = innerWidth;
+  drawPlan();
+  window.addEventListener("resize", function () { drawPlan(); if (!fx.hidden) sizeFx(); if (!titleEl.hidden && (!TOUCH || innerWidth !== lastW)) layoutTitle(true); lastW = innerWidth; PB.resize(); });
+  route();
+  PB.sync();
+})();
+</script>
+</body>
+</html>
